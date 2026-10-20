@@ -32,6 +32,8 @@ import {
   TamperTestResponse,
   MeshTopologyData,
   MeshScenarioResponse,
+  LinkBudgetRequest,
+  LinkBudgetResult,
 } from '../types'
 
 const BASE_URL = '/api/v1'
@@ -503,6 +505,23 @@ export class ApiClient {
       method: 'POST',
     })
   }
+
+  async downloadPcapBlob(): Promise<Blob> {
+    const res = await fetch(`${this.baseUrl}/diagnostics/pcap`, {
+      method: 'GET',
+    })
+    if (!res.ok) {
+      throw new Error(`Failed to download PCAP file: ${res.statusText}`)
+    }
+    return res.blob()
+  }
+
+  async calculateLinkBudget(params?: LinkBudgetRequest): Promise<LinkBudgetResult> {
+    return this.request<LinkBudgetResult>('/rf/link-budget', {
+      method: 'POST',
+      body: JSON.stringify(params || {}),
+    })
+  }
 }
 
 export const api = new ApiClient('/api/v1')
@@ -545,6 +564,10 @@ export const setRelayTelemetry = (
 export const triggerMeshScenario = (scenario: string, client: ApiClient = api) =>
   client.triggerMeshScenario(scenario)
 export const simulateRoute = (client: ApiClient = api) => client.simulateRoute()
+export const downloadPcapBlob = (client: ApiClient = api) => client.downloadPcapBlob()
+export const calculateLinkBudget = (params?: LinkBudgetRequest, client: ApiClient = api) =>
+  client.calculateLinkBudget(params)
+
 
 
 

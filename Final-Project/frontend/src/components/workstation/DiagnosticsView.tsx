@@ -15,6 +15,7 @@ import {
   Lock,
   Cpu,
   X,
+  Download,
 } from 'lucide-react'
 import { SystemDiagnosticsData, StationHealthMetadata, KeyringInfo, TamperTestResponse } from '../../types'
 import { api, alphaApi, bravoApi } from '../../services/api'
@@ -35,6 +36,27 @@ export const DiagnosticsView: React.FC = () => {
   const [isZeroizeModalOpen, setIsZeroizeModalOpen] = useState<boolean>(false)
   const [zeroizeLoading, setZeroizeLoading] = useState<boolean>(false)
   const [zeroizeNotice, setZeroizeNotice] = useState<string | null>(null)
+  const [pcapDownloading, setPcapDownloading] = useState<boolean>(false)
+
+  const handleDownloadPcap = async () => {
+    setPcapDownloading(true)
+    try {
+      const blob = await api.downloadPcapBlob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const now = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+      a.href = url
+      a.download = `astra_tactical_${now}.pcap`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Failed to export PCAP capture', err)
+    } finally {
+      setPcapDownloading(false)
+    }
+  }
 
   const fetchDiagnostics = async () => {
     try {
@@ -157,6 +179,15 @@ export const DiagnosticsView: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 text-xs font-mono">
+          <button
+            onClick={handleDownloadPcap}
+            disabled={pcapDownloading}
+            className="px-3 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-500/40 flex items-center space-x-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title="Download standard libpcap capture file for Wireshark analysis"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{pcapDownloading ? 'Exporting...' : 'Export Wireshark (.pcap)'}</span>
+          </button>
           <button
             onClick={handleCopyDiagnostics}
             className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 flex items-center space-x-1.5 transition-colors"

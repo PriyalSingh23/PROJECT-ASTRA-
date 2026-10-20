@@ -1602,3 +1602,80 @@ def workstation_help():
     from integration.workstation_service import workstation_service
     return jsonify(workstation_service.get_help_documentation())
 
+
+@api_v1.route("/diagnostics/pcap", methods=["GET"])
+def export_pcap_capture():
+    from flask import Response
+    from messaging.pcap import global_pcap_buffer
+    import time
+
+    # Ensure at least one initial baseline packet exists in buffer for valid PCAP inspection
+    if global_pcap_buffer.count() == 0:
+        sample_packet = b"\x53\x48\x44\x57\x03\x01\x00\x00" + b"ASTRA_TACTICAL_ENVELOPE_V3_INIT_FRAME"
+        global_pcap_buffer.record(sample_packet, {"type": "BEACON_INIT"})
+
+    pcap_data = global_pcap_buffer.generate_pcap()
+    station = current_app.config.get("STATION_ID") or "gateway"
+    ts_str = time.strftime("%Y%m%d_%H%M%S")
+    filename = f"astra_tactical_{station}_{ts_str}.pcap"
+
+    return Response(
+        pcap_data,
+        mimetype="application/vnd.tcpdump.pcap",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Pcap-Packet-Count": str(global_pcap_buffer.count()),
+            "X-Pcap-LinkType": "147",
+        },
+    )
+
+
+@api_v1.route("/rf/link-budget", methods=["POST", "GET"])
+def compute_rf_link_budget():
+    from messaging.link_budget import calculate_link_budget, TACTICAL_BAND_PRESETS
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+    else:
+        data = request.args.to_dict()
+
+    preset_key = data.get("preset")
+    preset_params = TACTICAL_BAND_PRESETS.get(preset_key, {})
+
+    distance_km = float(data.get("distance_km", 5.0))
+    freq_mhz = float(data.get("freq_mhz", preset_params.get("freq_mhz", 433.0)))
+    tx_power_dbm = float(data.get("tx_power_dbm", preset_params.get("tx_power_dbm", 37.0)))
+    tx_gain_dbi = float(data.get("tx_gain_dbi", preset_params.get("tx_gain_dbi", 2.15)))
+    rx_gain_dbi = float(data.get("rx_gain_dbi", preset_params.get("rx_gain_dbi", 2.15)))
+    cable_loss_db = float(data.get("cable_loss_db", 1.0))
+    rx_sensitivity_dbm = float(data.get("rx_sensitivity_dbm", preset_params.get("rx_sensitivity_dbm", -114.0)))
+
+    result = calculate_link_budget(
+        distance_km=distance_km,
+        freq_mhz=freq_mhz,
+        tx_power_dbm=tx_power_dbm,
+        tx_gain_dbi=tx_gain_dbi,
+        rx_gain_dbi=rx_gain_dbi,
+        cable_loss_db=cable_loss_db,
+        rx_sensitivity_dbm=rx_sensitivity_dbm,
+    )
+    result["presets"] = TACTICAL_BAND_PRESETS
+    return jsonify(result)
+
+
+@api_v1.route("/stream/spectrum", methods=["GET"])
+def get_spectrum_stream_snapshot():
+    import numpy as np
+    import time
+    fft_size = 256
+    noise = np.random.normal(loc=-105.0, scale=3.5, size=fft_size)
+    center = fft_size // 2
+    signal = 18.0 * np.exp(-0.5 * ((np.arange(fft_size) - center) / 12.0) ** 2)
+    spectrum_db = (noise + signal).tolist()
+    return jsonify({
+        "fft_size": fft_size,
+        "center_freq_mhz": 433.0,
+        "spectrum_db": [round(val, 2) for val in spectrum_db],
+        "timestamp": time.time(),
+    })
+
+

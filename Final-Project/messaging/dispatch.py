@@ -459,16 +459,23 @@ class DispatchRouter:
         recipient = message_dict.get("recipient_endpoint_id", "")
         recipient_mlkem_pk = None
         recipient_x25519_pk = None
-        try:
-            from messaging.db import get_db_session
-            from messaging.models import Endpoint
-            with get_db_session() as session:
-                ep = session.query(Endpoint).filter_by(endpoint_id=recipient).first()
-                if ep and ep.public_key_pqc and ep.public_key_x25519:
-                    recipient_mlkem_pk = base64.b64decode(ep.public_key_pqc)
-                    recipient_x25519_pk = base64.b64decode(ep.public_key_x25519)
-        except Exception:
-            pass
+        # Recipient-key lookup is a live-RF concern: production only reaches
+        # this method from dispatch() after the is_live check, where the
+        # hybrid (ML-KEM + X25519) envelope is required for the RF hop. In
+        # simulation mode (bare DispatchRouter, direct callers) we keep the
+        # compact Envelope v2 frame so frame/chunk layout stays deterministic
+        # regardless of ambient keyring state in the shared dev DB.
+        if self.is_live:
+            try:
+                from messaging.db import get_db_session
+                from messaging.models import Endpoint
+                with get_db_session() as session:
+                    ep = session.query(Endpoint).filter_by(endpoint_id=recipient).first()
+                    if ep and ep.public_key_pqc and ep.public_key_x25519:
+                        recipient_mlkem_pk = base64.b64decode(ep.public_key_pqc)
+                        recipient_x25519_pk = base64.b64decode(ep.public_key_x25519)
+            except Exception:
+                pass
 
         frame = _encode_envelope(message_dict, recipient_mlkem_pk=recipient_mlkem_pk, recipient_x25519_pk=recipient_x25519_pk)
         chunks = chunk_frame(frame)

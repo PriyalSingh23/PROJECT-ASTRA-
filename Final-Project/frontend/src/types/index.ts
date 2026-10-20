@@ -833,5 +833,46 @@ export interface MeshScenarioResponse {
   status: string
 }
 
+// ---------------------------------------------------------------------------
+// Advanced RF Field Tools, Live Waterfall & Link Budget (Phase 09)
+// ---------------------------------------------------------------------------
+export interface TacticalBandPreset {
+  name: string
+  freq_mhz: number
+  tx_power_dbm: number
+  tx_gain_dbi: number
+  rx_gain_dbi: number
+  rx_sensitivity_dbm: number
+  description: string
+}
+
+export interface LinkBudgetResult {
+  distance_km: number
+  freq_mhz: number
+  fspl_db: number
+  eirp_dbm: number
+  rx_power_dbm: number
+  thermal_noise_dbm: number
+  snr_db: number
+  rx_sensitivity_dbm: number
+  link_margin_db: number
+  status: 'OPTIMAL' | 'MARGINAL' | 'FADE_THREAT'
+  status_color: string
+  status_desc: string
+  presets?: Record<string, TacticalBandPreset>
+}
+
+export interface LinkBudgetRequest {
+  preset?: string
+  distance_km?: number
+  freq_mhz?: number
+  tx_power_dbm?: number
+  tx_gain_dbi?: number
+  rx_gain_dbi?: number
+  cable_loss_db?: number
+  rx_sensitivity_dbm?: number
+}
+
+
 
 

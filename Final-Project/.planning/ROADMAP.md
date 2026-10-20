@@ -24,8 +24,8 @@
 
 - [x] **Phase 6: Multi-Database Physical Isolation & Dedicated Daemon Endpoints** (2/2 plans) — completed 2026-10-20
 - [x] **Phase 7: Post-Quantum Hybrid Cryptography (ML-KEM / Kyber + AES-256-GCM)** (2/2 plans) — completed 2026-10-20
-- [ ] **Phase 8: Multi-Hop Ad-Hoc Mesh Routing & Relay Protocol** - Implement dynamic opportunistic bundle routing, hop TTL control, and 3D visual routing paths across > 5 mobile and aerial relay nodes.
-- [ ] **Phase 9: Advanced RF Field Tools, Live Waterfall & Diagnostic Bench** - Build high-performance WebGL spectrum waterfall streaming, raw PCAP export for Wireshark inspection, and real-time RF link budget computation.
+- [x] **Phase 8: Multi-Hop Ad-Hoc Mesh Routing & Relay Protocol** (2/2 plans) — completed 2026-10-20
+- [x] **Phase 9: Advanced RF Field Tools, Live Waterfall & Diagnostic Bench** (2/2 plans) — completed 2026-10-20
 
 ---
 
