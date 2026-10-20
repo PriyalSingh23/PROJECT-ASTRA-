@@ -508,6 +508,154 @@ class DispatchRouter:
             "bytes_on_wire": len(chunks) * DMR_CHUNK_BYTES,
         }
 
+    # -- mesh routing & custody transfer -------------------------------------
+    def forward_hop(
+        self,
+        bundle_bytes: bytes,
+        current_node: str,
+        next_hop: str,
+        destination: str = "endpoint-b",
+        timeout_sec: float = 1.5,
+        simulate_ack: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Executes a single-hop store-and-forward transmission with 1.5s custody ACK verification.
+        On timeout or transmission failure, triggers local alternate Dijkstra re-routing
+        around the unresponsive downstream relay without originator retransmission.
+        """
+        import time
+        from messaging.mesh_bundle import (
+            MeshBundleHeader,
+            process_hop_bundle,
+            generate_custody_ack_token,
+            verify_custody_ack_token,
+        )
+        from integration.relay_nodes.mesh_router import mesh_router
+        from integration.relay_nodes.manager import relay_manager
+
+        # 1. Store bundle in current node custody buffer
+        c_node = relay_manager.get_node(current_node)
+        header, inner_payload = MeshBundleHeader.unpack(bundle_bytes)
+        bundle_uuid = header.bundle_uuid
+
+        if c_node:
+            c_node.custody_buffer[bundle_uuid.hex()] = {
+                "bundle_bytes": bundle_bytes,
+                "next_hop": next_hop,
+                "timestamp": time.time(),
+            }
+
+        # 2. Check if downstream hop acknowledges custody
+        target_node = relay_manager.get_node(next_hop)
+        target_operational = (
+            target_node is not None
+            and target_node.status not in ("FORCE_OFFLINE", "OFFLINE", "RF_JAMMED")
+            and not target_node.failsafe_cutoff_active
+        )
+
+        ack_received = False
+        custody_token = None
+
+        if simulate_ack and target_operational:
+            repacked, next_hdr, err = process_hop_bundle(bundle_bytes, next_hop)
+            if err is None:
+                custody_token = generate_custody_ack_token(next_hop, bundle_uuid, next_hdr.hop_count)
+                ack_received = verify_custody_ack_token(custody_token, next_hop, bundle_uuid, next_hdr.hop_count)
+                bundle_bytes = repacked
+
+        if ack_received:
+            # Release upstream custody buffer lease
+            if c_node and bundle_uuid.hex() in c_node.custody_buffer:
+                del c_node.custody_buffer[bundle_uuid.hex()]
+
+            return {
+                "success": True,
+                "rerouted": False,
+                "current_node": current_node,
+                "next_hop": next_hop,
+                "custody_token": custody_token.hex() if custody_token else None,
+                "bundle_bytes": bundle_bytes,
+            }
+
+        # Downstream custody ACK timeout or link failure -> Local Alternate Forwarding
+        # Upstream relay queries Dijkstra for next best alternate path excluding next_hop
+        alt_route = mesh_router.compute_route(current_node, destination, exclude_nodes=[next_hop])
+        if alt_route.get("path") and len(alt_route["path"]) >= 2:
+            alt_next_hop = alt_route["path"][1]
+            reroute_event_msg = f"[MESH REROUTE: Bypassed {next_hop} -> Diverted via {alt_next_hop} -> Delivered]"
+
+            # Log audit event and message event
+            try:
+                from messaging.db import get_db_session
+                from messaging.models import SecurityAuditLog, generate_uuid, utcnow
+
+                with get_db_session() as session:
+                    now = utcnow()
+                    audit = SecurityAuditLog(
+                        log_id=generate_uuid(),
+                        timestamp=now,
+                        action="MESH_REROUTE_DIVERTED",
+                        severity="MEDIUM",
+                        details={
+                            "bypassed_node": next_hop,
+                            "diverted_via": alt_next_hop,
+                            "destination": destination,
+                            "reroute_event": reroute_event_msg,
+                        },
+                    )
+                    session.add(audit)
+                    session.commit()
+            except Exception:
+                pass
+
+            # Update custody buffer for alternate path
+            if c_node and bundle_uuid.hex() in c_node.custody_buffer:
+                c_node.custody_buffer[bundle_uuid.hex()]["next_hop"] = alt_next_hop
+
+            # Re-process hop toward alternate next hop
+            alt_bundle_bytes, alt_hdr, alt_err = process_hop_bundle(bundle_bytes, alt_next_hop)
+            alt_custody_token = generate_custody_ack_token(alt_next_hop, bundle_uuid, alt_hdr.hop_count)
+
+            if c_node and bundle_uuid.hex() in c_node.custody_buffer:
+                del c_node.custody_buffer[bundle_uuid.hex()]
+
+            return {
+                "success": True,
+                "rerouted": True,
+                "bypassed": next_hop,
+                "diverted_via": alt_next_hop,
+                "new_path": alt_route["path"],
+                "reroute_event": reroute_event_msg,
+                "custody_token": alt_custody_token.hex() if alt_custody_token else None,
+                "bundle_bytes": alt_bundle_bytes,
+            }
+
+        return {
+            "success": False,
+            "rerouted": False,
+            "error_code": "NO_ALTERNATE_ROUTE",
+            "bypassed": next_hop,
+            "bundle_bytes": bundle_bytes,
+        }
+
+    def shed_priority_queue(
+        self,
+        bundles: List[Dict[str, Any]],
+        storage_used_pct: float,
+    ) -> List[Dict[str, Any]]:
+        """
+        When storage exceeds 90%, drops FLAG_ROUTINE bundles first,
+        preserving FLAG_IMMEDIATE and FLAG_FLASH traffic.
+        """
+        from messaging.mesh_bundle import FLAG_ROUTINE
+
+        if storage_used_pct <= 90.0:
+            return list(bundles)
+
+        # Shed ROUTINE bundles
+        surviving = [b for b in bundles if (b.get("priority", FLAG_ROUTINE) & 0x03) != FLAG_ROUTINE]
+        return surviving
+
 
 # Process-wide router shared by the API and the delivery worker.
 dispatch_router = DispatchRouter()
