@@ -6,8 +6,6 @@ import {
   MessageSquare,
   Cpu,
   Settings,
-  Sun,
-  Moon,
   Shield,
   Wifi,
 } from 'lucide-react'
@@ -45,18 +43,6 @@ export function AstraSidebar({
       badge: null,
     },
     {
-      id: 'spectrum' as AstraTab,
-      label: 'Spectrum & Waterfall',
-      icon: Radio,
-      badge: 'LIVE',
-    },
-    {
-      id: 'waveform' as AstraTab,
-      label: 'Waveform Analysis',
-      icon: Activity,
-      badge: null,
-    },
-    {
       id: 'topology' as AstraTab,
       label: '3D Tactical Mesh',
       icon: Wifi,
@@ -67,6 +53,18 @@ export function AstraSidebar({
       label: 'Secure Messaging',
       icon: MessageSquare,
       badge: 'PQC',
+    },
+    {
+      id: 'waveform' as AstraTab,
+      label: 'Waveform & LPI',
+      icon: Activity,
+      badge: 'LPI',
+    },
+    {
+      id: 'spectrum' as AstraTab,
+      label: 'Spectrum & Waterfall',
+      icon: Radio,
+      badge: 'LIVE',
     },
     {
       id: 'research' as AstraTab,
@@ -157,33 +155,18 @@ export function AstraSidebar({
         </div>
       </div>
 
-      {/* Bottom: Night Mode Toggle & Operator Profile */}
-      <div className="space-y-3 pt-4 border-t border-[var(--line)]">
-        {/* Night Mode Switcher */}
-        <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-bold text-[var(--muted)]">Night Mode</span>
-          <button
-            onClick={() => setIsNightMode(!isNightMode)}
-            className="neo-btn p-2 rounded-xl text-[var(--ink)]"
-            title={isNightMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle Night Mode"
-          >
-            {isNightMode ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-600" />
-            )}
-          </button>
-        </div>
-
-        {/* Operator Profile */}
-        <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl neo-inset">
-          <div className="w-7 h-7 rounded-lg bg-[var(--surface-raised)] flex items-center justify-center font-bold text-xs text-[var(--accent)]">
+      {/* Bottom: Operator Profile & Security Tier */}
+      <div className="space-y-3 pt-3 border-t border-[var(--line)]">
+        <div className="flex items-center gap-3 px-2 py-2 rounded-xl neo-inset">
+          <div className="w-8 h-8 rounded-lg bg-[var(--surface-raised)] flex items-center justify-center font-black text-xs text-[var(--accent)] shadow-sm">
             OP
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold truncate">ASTRA Operator</div>
-            <div className="text-[9px] text-[var(--muted)] truncate">Research Field Access</div>
+            <div className="text-xs font-bold truncate text-[var(--ink)]">ASTRA Operator</div>
+            <div className="text-[10px] text-[var(--muted)] truncate flex items-center gap-1 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <span>PQC Tier 1 Field</span>
+            </div>
           </div>
         </div>
       </div>

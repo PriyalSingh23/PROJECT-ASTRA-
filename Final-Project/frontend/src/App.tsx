@@ -38,15 +38,17 @@ export function App() {
     }
   })
 
-  // Synchronize Night Mode with html data-theme
+  // Synchronize Night Mode with html data-theme and class
   useEffect(() => {
     if (isNightMode) {
       document.documentElement.setAttribute('data-theme', 'dark')
+      document.documentElement.classList.add('dark')
       try {
         localStorage.setItem('astra_theme', 'dark')
       } catch {}
     } else {
       document.documentElement.setAttribute('data-theme', 'light')
+      document.documentElement.classList.remove('dark')
       try {
         localStorage.setItem('astra_theme', 'light')
       } catch {}

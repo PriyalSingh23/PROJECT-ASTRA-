@@ -84,12 +84,12 @@ const StationNode: React.FC<{
 
       {/* Floating Tactical HUD Label */}
       <Html center distanceFactor={14} position={[0, 1.45, 0]} pointerEvents="none">
-        <div className="px-2 py-1 rounded border border-zinc-700 bg-zinc-950/90 text-center whitespace-nowrap shadow-lg backdrop-blur-sm">
-          <div className="text-[11px] font-mono font-bold text-zinc-100 tracking-wider flex items-center justify-center space-x-1">
+        <div className="px-2 py-1 rounded border border-slate-300 dark:border-zinc-700 bg-white/95 dark:bg-zinc-950/90 text-center whitespace-nowrap shadow-lg backdrop-blur-sm">
+          <div className="text-[11px] font-mono font-bold text-slate-900 dark:text-zinc-100 tracking-wider flex items-center justify-center space-x-1">
             <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: color }} />
             <span>{label}</span>
           </div>
-          <div className="text-[9px] font-mono text-zinc-400 mt-0.5">{sub}</div>
+          <div className="text-[9px] font-mono text-slate-600 dark:text-zinc-400 mt-0.5">{sub}</div>
         </div>
       </Html>
     </group>
@@ -149,19 +149,19 @@ const UAVRelayMarker: React.FC<{
             ? 'border-rose-600/80 bg-rose-950/90 text-rose-200 animate-pulse'
             : isLowBat
             ? 'border-amber-600/80 bg-amber-950/90 text-amber-200'
-            : 'border-zinc-700 bg-zinc-950/85 text-zinc-200'
+            : 'border-slate-300 dark:border-zinc-700 bg-white/95 dark:bg-zinc-950/85 text-slate-800 dark:text-zinc-200 shadow'
         }`}>
           <div className="text-[10px] font-mono font-bold tracking-tight">
             {relay.label}
           </div>
-          <div className="text-[9px] font-mono text-zinc-400 flex items-center justify-center space-x-1 mt-0.5">
-            <span className={relay.battery <= 15 ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+          <div className="text-[9px] font-mono text-slate-600 dark:text-zinc-400 flex items-center justify-center space-x-1 mt-0.5">
+            <span className={relay.battery <= 15 ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400'}>
               {relay.battery}%
             </span>
             <span>·</span>
-            <span className="text-cyan-400">Q:{relay.queueDepth}</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Q:{relay.queueDepth}</span>
             <span>·</span>
-            <span className="text-zinc-500">{(relay.position[1] * 2.5).toFixed(1)}km</span>
+            <span className="text-slate-500 dark:text-zinc-500">{(relay.position[1] * 2.5).toFixed(1)}km</span>
           </div>
           {isAlarm && (
             <div className="text-[8px] font-mono font-bold text-rose-300 uppercase mt-0.5">
@@ -229,20 +229,20 @@ const GroundRelayMarker: React.FC<{
           isAlarm
             ? 'border-rose-600/80 bg-rose-950/90 text-rose-200 animate-pulse'
             : isConvoy
-            ? 'border-amber-600/70 bg-zinc-950/90 text-amber-200'
-            : 'border-zinc-700 bg-zinc-950/85 text-zinc-200'
+            ? 'border-amber-400 dark:border-amber-600/70 bg-amber-50/90 dark:bg-zinc-950/90 text-amber-900 dark:text-amber-200'
+            : 'border-slate-300 dark:border-zinc-700 bg-white/95 dark:bg-zinc-950/85 text-slate-800 dark:text-zinc-200 shadow'
         }`}>
           <div className="text-[10px] font-mono font-bold tracking-tight">
             {relay.label}
           </div>
-          <div className="text-[9px] font-mono text-zinc-400 flex items-center justify-center space-x-1 mt-0.5">
-            <span className={relay.battery <= 15 ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+          <div className="text-[9px] font-mono text-slate-600 dark:text-zinc-400 flex items-center justify-center space-x-1 mt-0.5">
+            <span className={relay.battery <= 15 ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400'}>
               {relay.battery}%
             </span>
             <span>·</span>
-            <span className="text-cyan-400">Q:{relay.queueDepth}</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">Q:{relay.queueDepth}</span>
             <span>·</span>
-            <span className="text-zinc-500">GROUND</span>
+            <span className="text-slate-500 dark:text-zinc-500">GROUND</span>
           </div>
           {isAlarm && (
             <div className="text-[8px] font-mono font-bold text-rose-300 uppercase mt-0.5">
@@ -346,7 +346,8 @@ const StratifiedMeshScene: React.FC<{
   onSelectStation?: (station: DrawerStation) => void
   cameraPreset: { cam: [number, number, number]; target: [number, number, number] }
   controlsRef: React.RefObject<any>
-}> = ({ model, onSelectRelay, onSelectStation, cameraPreset, controlsRef }) => {
+  isDark?: boolean
+}> = ({ model, onSelectRelay, onSelectStation, cameraPreset, controlsRef, isDark = true }) => {
   const { alpha, bravo, relays, links, activePath } = model
 
   // Active path vector coordinates
@@ -372,13 +373,16 @@ const StratifiedMeshScene: React.FC<{
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 18, 12]} intensity={1.2} />
-      <pointLight position={alpha.position} intensity={18} distance={16} color="#06b6d4" />
-      <pointLight position={bravo.position} intensity={18} distance={16} color="#10b981" />
+      <ambientLight intensity={isDark ? 0.45 : 0.9} />
+      <directionalLight position={[10, 18, 12]} intensity={isDark ? 1.2 : 1.6} />
+      <pointLight position={alpha.position} intensity={isDark ? 18 : 12} distance={16} color="#06b6d4" />
+      <pointLight position={bravo.position} intensity={isDark ? 18 : 12} distance={16} color="#10b981" />
 
       {/* Dual Tactical Grid: Ground Floor and Aerial Altitude Guide */}
-      <gridHelper args={[48, 48, '#1e293b', '#0f172a']} position={[0, -0.05, 0]} />
+      <gridHelper
+        args={[48, 48, isDark ? '#1e293b' : '#94a3b8', isDark ? '#0f172a' : '#cbd5e1']}
+        position={[0, -0.05, 0]}
+      />
 
       {/* Ground Radar Sweeps at Alpha and Bravo */}
       <GroundRadarSweep position={[alpha.position[0], 0, alpha.position[2]]} color="#06b6d4" />
@@ -389,13 +393,13 @@ const StratifiedMeshScene: React.FC<{
         <Line
           key={`dormant-${i}`}
           points={[l.sourcePos, l.targetPos]}
-          color="#3f3f46"
+          color={isDark ? '#3f3f46' : '#94a3b8'}
           lineWidth={1.2}
           dashed
           dashSize={0.4}
           gapSize={0.3}
           transparent
-          opacity={0.3}
+          opacity={isDark ? 0.3 : 0.55}
         />
       ))}
 
@@ -514,6 +518,23 @@ export const LinkTopologyView: React.FC<LinkTopologyViewProps> = ({
   const [diversionBanner, setDiversionBanner] = useState<string | null>(null)
   const [convergenceMs, setConvergenceMs] = useState<number | null>(null)
 
+  // Reactive theme tracking for daylight vs night mode 3D styling
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return true
+    return document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.classList.contains('dark')
+  })
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.classList.contains('dark')
+      setIsDark(dark)
+    }
+    checkTheme()
+    const observer = new MutationObserver(checkTheme)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] })
+    return () => observer.disconnect()
+  }, [])
+
   // Camera preset state
   const controlsRef = useRef<any>(null)
   const [cameraPreset, setCameraPreset] = useState<{
@@ -620,18 +641,18 @@ export const LinkTopologyView: React.FC<LinkTopologyViewProps> = ({
   return (
     <div className="space-y-3">
       {/* Header + Link status */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-sm font-mono font-bold text-zinc-100 tracking-wide">
+              <h2 className="text-sm font-mono font-bold text-slate-900 dark:text-zinc-100 tracking-wide">
                 STRATIFIED 3D AD-HOC MESH ROUTING
               </h2>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/60 border border-cyan-500/60 text-cyan-300">
                 MULTI-FACTOR DIJKSTRA
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 mt-0.5">
               Dual-layer ad-hoc network: ground relays (Y=0) & aerial UAV flight corridors (Y=+4.5, Y=+6.0).
             </p>
           </div>
@@ -639,86 +660,86 @@ export const LinkTopologyView: React.FC<LinkTopologyViewProps> = ({
           <div className="flex items-center space-x-3 text-[11px] font-mono">
             <span className="inline-flex items-center space-x-1">
               <span className="w-2 h-2 rounded-full inline-block bg-[#06b6d4]" />
-              <span className="text-zinc-300">Active Laser</span>
+              <span className="text-slate-700 dark:text-zinc-300">Active Laser</span>
             </span>
             <span className="inline-flex items-center space-x-1">
               <span className="w-2 h-2 rounded-full inline-block bg-[#3f3f46]" />
-              <span className="text-zinc-500">Dormant RF</span>
+              <span className="text-slate-500 dark:text-zinc-500">Dormant RF</span>
             </span>
             <span className="inline-flex items-center space-x-1">
               <span className="w-2 h-2 rounded-full inline-block bg-[#ef4444]" />
-              <span className="text-rose-400">Broken / Jammed</span>
+              <span className="text-rose-500 dark:text-rose-400">Broken / Jammed</span>
             </span>
-            <span className="text-zinc-600">|</span>
-            <span className={model.routeStatus === 'OPTIMAL' ? 'text-cyan-400 font-bold' : 'text-amber-400 font-bold'}>
+            <span className="text-slate-400 dark:text-zinc-600">|</span>
+            <span className={model.routeStatus === 'OPTIMAL' ? 'text-cyan-600 dark:text-cyan-400 font-bold' : 'text-amber-600 dark:text-amber-400 font-bold'}>
               {model.routeStatus}
             </span>
           </div>
         </div>
 
         {/* Outbound path & hardware mode */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-3">
-          <div className="text-[11px] font-mono text-zinc-400">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-zinc-800 pt-3">
+          <div className="text-[11px] font-mono text-slate-600 dark:text-zinc-400">
             Outbound gateway:{' '}
-            <span className={activeTransport?.is_live ? 'text-amber-400 font-bold' : 'text-cyan-400 font-bold'}>
+            <span className={activeTransport?.is_live ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-cyan-600 dark:text-cyan-400 font-bold'}>
               {activeTransport?.is_live ? activeTransport.active_transport : 'SIMULATION'}
             </span>
-            <span className="mx-2 text-zinc-700">·</span>
-            Active Hops <span className="text-cyan-300 font-bold">{model.totalHops}</span>
-            <span className="mx-2 text-zinc-700">·</span>
-            Queued <span className="text-zinc-200">{model.link.queued}</span>
-            <span className="mx-2 text-zinc-700">·</span>
-            Delivered <span className="text-zinc-200">{model.link.delivered}</span>
+            <span className="mx-2 text-slate-400 dark:text-zinc-700">·</span>
+            Active Hops <span className="text-cyan-600 dark:text-cyan-300 font-bold">{model.totalHops}</span>
+            <span className="mx-2 text-slate-400 dark:text-zinc-700">·</span>
+            Queued <span className="text-slate-800 dark:text-zinc-200 font-semibold">{model.link.queued}</span>
+            <span className="mx-2 text-slate-400 dark:text-zinc-700">·</span>
+            Delivered <span className="text-slate-800 dark:text-zinc-200 font-semibold">{model.link.delivered}</span>
           </div>
           <button
             onClick={toggleLive}
             disabled={isBusy || !isBackendHealthy}
             className={`px-3 py-1.5 rounded-md text-[11px] font-mono font-bold transition-colors disabled:opacity-40 cursor-pointer ${
               activeTransport?.is_live
-                ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
-                : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/40'
+                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
+                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/40'
             }`}
           >
             {isBusy ? 'SWITCHING…' : activeTransport?.is_live ? 'RETURN TO SIMULATION' : 'GO LIVE (MOTOROLA)'}
           </button>
         </div>
-        {notice && <div className="mt-2 text-[11px] font-mono text-amber-400">{notice}</div>}
+        {notice && <div className="mt-2 text-[11px] font-mono text-amber-600 dark:text-amber-400">{notice}</div>}
       </div>
 
       {/* 3D Canvas with 4 Tactical Quick-View Presets */}
-      <div className="relative rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden">
+      <div className="relative rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-950 overflow-hidden shadow-sm">
         {/* Top-Right Camera Quick-View Presets Overlay */}
-        <div className="absolute top-3 right-3 z-20 flex flex-wrap items-center gap-1.5 bg-zinc-950/80 p-1 rounded-md border border-zinc-800/80 backdrop-blur-md">
+        <div className="absolute top-3 right-3 z-20 flex flex-wrap items-center gap-1.5 bg-white/90 dark:bg-zinc-950/80 p-1 rounded-lg border border-slate-200 dark:border-zinc-800/80 backdrop-blur-md shadow-md">
           <button
             onClick={setPresetTheater}
-            className="px-2 py-1 rounded text-[10px] font-mono text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center space-x-1"
+            className="px-2 py-1 rounded text-[10px] font-mono text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center space-x-1 cursor-pointer"
             title="Theater Overview [0, 16, 22]"
           >
-            <Eye className="w-3 h-3 text-cyan-400" />
+            <Eye className="w-3 h-3 text-cyan-500 dark:text-cyan-400" />
             <span>Theater Overview</span>
           </button>
           <button
             onClick={setPresetUAV}
-            className="px-2 py-1 rounded text-[10px] font-mono text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center space-x-1"
+            className="px-2 py-1 rounded text-[10px] font-mono text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center space-x-1 cursor-pointer"
             title="Focus UAV Flight Corridors [0, 9, 12]"
           >
-            <Compass className="w-3 h-3 text-sky-400" />
+            <Compass className="w-3 h-3 text-sky-500 dark:text-sky-400" />
             <span>UAV Corridors</span>
           </button>
           <button
             onClick={setPresetVector}
-            className="px-2 py-1 rounded text-[10px] font-mono text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center space-x-1"
+            className="px-2 py-1 rounded text-[10px] font-mono text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center space-x-1 cursor-pointer"
             title="Forwarding Vector Tracking [-4, 7, 10]"
           >
-            <Sparkles className="w-3 h-3 text-amber-400" />
+            <Sparkles className="w-3 h-3 text-amber-500 dark:text-amber-400" />
             <span>Vector Tracking</span>
           </button>
           <button
             onClick={setPresetGround}
-            className="px-2 py-1 rounded text-[10px] font-mono text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center space-x-1"
+            className="px-2 py-1 rounded text-[10px] font-mono text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center space-x-1 cursor-pointer"
             title="Ground Axis Perspective [0, 2, 16]"
           >
-            <Layers className="w-3 h-3 text-emerald-400" />
+            <Layers className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
             <span>Ground Axis</span>
           </button>
         </div>
@@ -727,7 +748,12 @@ export const LinkTopologyView: React.FC<LinkTopologyViewProps> = ({
           <Canvas
             dpr={[1, 2]}
             camera={{ position: [0, 16, 22], fov: 45 }}
-            style={{ height: '480px', background: 'radial-gradient(circle at 50% 35%, #08101e 0%, #05070c 75%)' }}
+            style={{
+              height: '480px',
+              background: isDark
+                ? 'radial-gradient(circle at 50% 35%, #08101e 0%, #05070c 75%)'
+                : 'radial-gradient(circle at 50% 35%, #f8fafc 0%, #e2e8f0 85%)',
+            }}
           >
             <StratifiedMeshScene
               model={model}
@@ -735,13 +761,14 @@ export const LinkTopologyView: React.FC<LinkTopologyViewProps> = ({
               onSelectStation={setDrawerStation}
               cameraPreset={cameraPreset}
               controlsRef={controlsRef}
+              isDark={isDark}
             />
           </Canvas>
 
-          <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-800 text-[10px] font-mono text-zinc-500 bg-zinc-950/90">
+          <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-zinc-800 text-[10px] font-mono text-slate-600 dark:text-zinc-500 bg-white/95 dark:bg-zinc-950/90">
             <span>Click any relay to open inspector & manual impairment toggles · Drag to rotate · Scroll to zoom</span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 rounded-full inline-block bg-cyan-400 animate-pulse" />
+            <span className="flex items-center space-x-1.5 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full inline-block bg-cyan-500 animate-pulse" />
               <span>Route: {model.activePath.join(' → ')}</span>
             </span>
           </div>

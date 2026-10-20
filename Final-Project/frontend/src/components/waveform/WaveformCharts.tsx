@@ -10,21 +10,21 @@ import { ScatterPoint, SpectrumPoint, WaveformSample } from '../../types'
  * which a canvas-based library would not do for free.
  */
 
-const AXIS = '#3f3f46' // zinc-700
-const GRID = '#27272a' // zinc-800
-const LABEL = '#71717a' // zinc-500
+const AXIS = 'var(--line)'
+const GRID = 'var(--grid)'
+const LABEL = 'var(--muted)'
 
 const Frame: React.FC<{
   title: string
   hint?: string
   children: React.ReactNode
 }> = ({ title, hint, children }) => (
-  <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 overflow-hidden">
-    <div className="flex items-baseline justify-between px-3 py-1.5 border-b border-zinc-800/80">
-      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">{title}</span>
-      {hint && <span className="text-[10px] font-mono text-zinc-600 tabular-nums">{hint}</span>}
+  <div className="rounded-xl border border-slate-200 dark:border-[var(--line)] bg-white dark:bg-[var(--surface)] neo-sm overflow-hidden shadow-xs">
+    <div className="flex items-baseline justify-between px-3 py-2 border-b border-slate-200 dark:border-[var(--line)] bg-slate-50 dark:bg-[var(--surface-raised)]/60">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-[var(--ink)]">{title}</span>
+      {hint && <span className="text-[10px] font-mono text-slate-500 dark:text-[var(--muted)] tabular-nums">{hint}</span>}
     </div>
-    <div className="p-2">{children}</div>
+    <div className="p-3 bg-white dark:bg-[#0B111A]">{children}</div>
   </div>
 )
 

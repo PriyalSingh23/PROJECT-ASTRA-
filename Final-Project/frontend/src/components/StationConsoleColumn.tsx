@@ -125,13 +125,13 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
 
   const isStationAlpha = stationId === 'endpoint-a'
   const stationAccent = isStationAlpha ? '#06B6D4' : '#10B981'
-  const stationBorderColor = isStationAlpha ? 'border-cyan-500/40' : 'border-emerald-500/40'
+  const stationBorderColor = isStationAlpha ? 'border-cyan-300 dark:border-cyan-500/40' : 'border-emerald-300 dark:border-emerald-500/40'
   const stationBadgeBg = isStationAlpha
-    ? 'bg-cyan-950/70 border-cyan-500/50 text-cyan-300'
-    : 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+    ? 'bg-cyan-100 text-cyan-900 border-cyan-300 dark:bg-cyan-950/70 dark:border-cyan-500/50 dark:text-cyan-300'
+    : 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/70 dark:border-emerald-500/50 dark:text-emerald-300'
   const stationGlow = isStationAlpha
-    ? 'shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-    : 'shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+    ? 'shadow-[0_4px_16px_rgba(6,182,212,0.12)] dark:shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+    : 'shadow-[0_4px_16px_rgba(16,185,129,0.12)] dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]'
 
   // Real-time Tactical RF Frame & Physical Layer Budget (PQC Envelope v3, Task 07-02-03)
   const rfMetrics = useMemo(() => {
@@ -246,10 +246,10 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
 
   return (
     <div
-      className={`flex flex-col h-full bg-[#0B0F17] rounded-xl border ${stationBorderColor} ${stationGlow} overflow-hidden`}
+      className={`flex flex-col h-full bg-white dark:bg-[#0B0F17] rounded-xl border ${stationBorderColor} ${stationGlow} overflow-hidden`}
     >
       {/* 1. Dedicated Station Identity Banner */}
-      <div className="bg-[#131B2E] border-b border-zinc-800/80 px-4 py-3 shrink-0">
+      <div className="bg-slate-50 dark:bg-[#131B2E] border-b border-slate-200 dark:border-zinc-800/80 px-4 py-3 shrink-0">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           {/* Station Pill Badge */}
           <div className="flex items-center space-x-2">
@@ -261,13 +261,13 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                 style={{ backgroundColor: stationAccent }}
               />
               <span>{stationName}</span>
-              <span className="text-zinc-500 font-normal">({stationId})</span>
+              <span className="opacity-70 font-normal">({stationId})</span>
             </span>
-            <div className="flex items-center space-x-1 text-[11px] text-zinc-400 font-mono">
-              <ArrowRight className="w-3 h-3 text-zinc-500" />
+            <div className="flex items-center space-x-1 text-[11px] text-slate-600 dark:text-zinc-400 font-mono">
+              <ArrowRight className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
               <span>Target:</span>
-              <span className="text-zinc-300 font-semibold">{targetStationName}</span>
-              <span className="text-zinc-500 font-normal">({targetStationId})</span>
+              <span className="text-slate-900 dark:text-zinc-300 font-semibold">{targetStationName}</span>
+              <span className="text-slate-500 dark:text-zinc-500 font-normal">({targetStationId})</span>
             </div>
           </div>
 
@@ -275,7 +275,7 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
           <div className="flex items-center space-x-1.5">
             {/* Physical Storage Badge */}
             <span
-              className="bg-zinc-800 text-zinc-300 font-mono text-[9px] px-1.5 py-0.5 rounded border border-zinc-700"
+              className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono text-[9px] px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-medium"
               title={`SQLite Write-Ahead Logging: ${dbPath || (isStationAlpha ? 'alpha.db' : 'bravo.db')}`}
             >
               STORAGE: {dbPath || (isStationAlpha ? 'alpha.db' : 'bravo.db')} (WAL)
@@ -351,33 +351,33 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center bg-[#0B0F17] rounded-md p-0.5 border border-zinc-800 text-[10px] font-mono">
+          <div className="flex items-center bg-slate-100 dark:bg-[#0B0F17] rounded-md p-0.5 border border-slate-300 dark:border-zinc-800 text-[10px] font-mono">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`px-2 py-0.5 rounded transition-all ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-zinc-800 text-zinc-100 font-bold shadow'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-bold shadow'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               All Feeds ({outboxCount + localCount + inboxCount})
             </button>
             <button
               onClick={() => setActiveFilter('outbox')}
-              className={`px-2 py-0.5 rounded transition-all ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 activeFilter === 'outbox'
-                  ? 'bg-zinc-800 text-zinc-100 font-bold shadow'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-bold shadow'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               Outbox ({outboxCount + localCount})
             </button>
             <button
               onClick={() => setActiveFilter('inbox')}
-              className={`px-2 py-0.5 rounded transition-all ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 activeFilter === 'inbox'
-                  ? 'bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-500/40 shadow'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-500/40 shadow'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               Inbox ({inboxCount})
@@ -551,20 +551,20 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                   onClick={() => onSelectMessage(m)}
                   className={`rounded-lg p-3 transition-all cursor-pointer relative overflow-hidden group ${
                     isHighlighted
-                      ? 'ring-2 ring-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.4)] bg-[#1E293B] border border-cyan-400'
+                      ? 'ring-2 ring-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.4)] bg-cyan-50 dark:bg-[#1E293B] border border-cyan-400'
                       : isSelected
-                      ? 'bg-[#1E293B] border border-cyan-400 ring-1 ring-cyan-400/50 shadow-[0_4px_24px_rgba(6,182,212,0.2)]'
-                      : 'bg-[#131B2E] hover:bg-[#1E293B] border border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.3)]'
+                      ? 'bg-blue-50 dark:bg-[#1E293B] border border-cyan-400 ring-1 ring-cyan-400/50 shadow-md'
+                      : 'bg-slate-50 hover:bg-slate-100/90 dark:bg-[#131B2E] dark:hover:bg-[#1E293B] border border-slate-200 dark:border-zinc-800 shadow-xs'
                   }`}
                 >
                   {/* Top Bar: Route & Status Pill */}
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="flex items-center space-x-1.5 text-xs font-mono text-zinc-300 truncate">
-                      <span className="text-cyan-300 font-semibold">{m.sender_endpoint_id}</span>
-                      <ArrowRight className="w-3 h-3 text-zinc-500 shrink-0" />
-                      <span className="text-zinc-400 font-semibold">{m.recipient_endpoint_id}</span>
+                    <div className="flex items-center space-x-1.5 text-xs font-mono text-slate-700 dark:text-zinc-300 truncate">
+                      <span className="text-cyan-700 dark:text-cyan-300 font-semibold">{m.sender_endpoint_id}</span>
+                      <ArrowRight className="w-3 h-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                      <span className="text-slate-600 dark:text-zinc-400 font-semibold">{m.recipient_endpoint_id}</span>
                       {m.message_type && (
-                        <span className="ml-1 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-400 px-1.5 py-0.2 rounded font-sans uppercase">
+                        <span className="ml-1 text-[10px] bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 border border-slate-300 px-1.5 py-0.2 rounded font-sans uppercase">
                           {m.message_type}
                         </span>
                       )}
@@ -617,14 +617,14 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                   </div>
 
                   {/* Timestamp & Priority */}
-                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-2">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-zinc-500 mb-2">
                     <span>Sent: {formattedTime}</span>
-                    <span className="text-zinc-400">Prio: {m.priority}</span>
+                    <span className="text-slate-600 dark:text-zinc-400 font-medium">Prio: {m.priority}</span>
                   </div>
 
                   {/* Payload Preview */}
-                  <div className="bg-[#0B0F17]/70 rounded p-2 border border-zinc-800/80 mb-2">
-                    <p className="font-mono text-xs text-zinc-200 break-words whitespace-pre-wrap leading-relaxed line-clamp-3">
+                  <div className="bg-white dark:bg-[#0B0F17]/70 rounded p-2.5 border border-slate-200 dark:border-zinc-800/80 mb-2 shadow-xs">
+                    <p className="font-mono text-xs text-slate-900 dark:text-zinc-200 break-words whitespace-pre-wrap leading-relaxed line-clamp-3">
                       {m.payload}
                     </p>
                   </div>
@@ -656,19 +656,19 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
       </div>
 
       {/* 3. Dedicated Quick Composer Bar */}
-      <div className="bg-[#131B2E] border-t border-zinc-800/90 p-3 shrink-0 space-y-2">
+      <div className="bg-slate-50 dark:bg-[#131B2E] border-t border-slate-200 dark:border-zinc-800/90 p-3 shrink-0 space-y-2">
         {/* Presets Row */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-mono text-zinc-500 uppercase">Presets:</span>
+          <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 uppercase font-semibold">Presets:</span>
           {presets.map((p) => (
             <button
               key={p.type}
               type="button"
               onClick={() => handleApplyPreset(p)}
-              className={`text-[10px] font-mono px-2 py-0.5 rounded transition-all border ${
+              className={`text-[10px] font-mono px-2 py-0.5 rounded transition-all border cursor-pointer ${
                 messageType === p.type
-                  ? 'bg-cyan-950/80 border-cyan-500/60 text-cyan-300 font-bold'
-                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700/60 text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-cyan-100 text-cyan-900 border-cyan-400 dark:bg-cyan-950/80 dark:border-cyan-500/60 dark:text-cyan-300 font-bold'
+                  : 'bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-slate-300 dark:border-zinc-700/60 text-slate-700 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-zinc-200 shadow-xs'
               }`}
             >
               {p.type}
@@ -677,10 +677,10 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
         </div>
 
         {/* Priority & Airtime HUD Row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px] font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200 dark:border-zinc-800/60 text-[10px] font-mono">
           {/* Priority selector */}
           <div className="flex items-center space-x-1">
-            <span className="text-zinc-500">Prio:</span>
+            <span className="text-slate-500 dark:text-zinc-500 font-semibold">Prio:</span>
             {[
               { val: 1, label: 'NORM' },
               { val: 2, label: 'HIGH' },
@@ -691,16 +691,16 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                 key={p.val}
                 type="button"
                 onClick={() => onPriorityChange(p.val)}
-                className={`px-1.5 py-0.5 rounded font-bold border transition-all ${
+                className={`px-1.5 py-0.5 rounded font-bold border transition-all cursor-pointer ${
                   priority === p.val
                     ? p.val === 4
-                      ? 'bg-red-950 border-red-500 text-red-300'
+                      ? 'bg-red-100 text-red-900 border-red-400 dark:bg-red-950 dark:border-red-500 dark:text-red-300'
                       : p.val === 3
-                      ? 'bg-amber-950 border-amber-500 text-amber-300'
+                      ? 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950 dark:border-amber-500 dark:text-amber-300'
                       : p.val === 2
-                      ? 'bg-blue-950 border-blue-500 text-blue-300'
-                      : 'bg-zinc-700 border-zinc-500 text-zinc-100'
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-blue-100 text-blue-900 border-blue-400 dark:bg-blue-950 dark:border-blue-500 dark:text-blue-300'
+                      : 'bg-slate-200 text-slate-900 border-slate-400 dark:bg-zinc-700 dark:border-zinc-500 dark:text-zinc-100'
+                    : 'bg-white dark:bg-zinc-900 border-slate-300 dark:border-zinc-800 text-slate-600 dark:text-zinc-500 hover:text-slate-950 dark:hover:text-zinc-300 shadow-xs'
                 }`}
               >
                 {p.label}
@@ -710,25 +710,25 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
 
           {/* Real-Time Tactical RF & DMR Burst Budget HUD */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center space-x-2 text-zinc-400 bg-[#0B0F17]/90 px-2 py-0.5 rounded border border-zinc-800/80">
+            <div className="flex items-center space-x-2 text-slate-600 dark:text-zinc-400 bg-white dark:bg-[#0B0F17]/90 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800/80 shadow-xs">
               <span>
-                Raw: <strong className="text-zinc-200">{rfMetrics.rawBytes}B</strong>
+                Raw: <strong className="text-slate-900 dark:text-zinc-200">{rfMetrics.rawBytes}B</strong>
               </span>
               <span>
-                PQC Env: <strong className="text-cyan-300">+{rfMetrics.rawBytes > 0 ? 1150 : 0}B</strong>
+                PQC Env: <strong className="text-cyan-700 dark:text-cyan-300">+{rfMetrics.rawBytes > 0 ? 1150 : 0}B</strong>
               </span>
               <span>
-                RS: <strong className="text-zinc-200">{rfMetrics.rsChunks} blk</strong>
+                RS: <strong className="text-slate-900 dark:text-zinc-200">{rfMetrics.rsChunks} blk</strong>
               </span>
-              <span className="text-cyan-400">
+              <span className="text-cyan-600 dark:text-cyan-400">
                 Burst: <strong>{rfMetrics.burstAirtimeMs} ms</strong>
               </span>
             </div>
 
-            <div className="flex items-center space-x-1.5 text-[11px] font-mono text-cyan-400 bg-cyan-950/20 px-2 py-0.5 rounded border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]">
-              <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+            <div className="flex items-center space-x-1.5 text-[11px] font-mono text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/20 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-500/30">
+              <Radio className="w-3 h-3 text-cyan-500 dark:text-cyan-400 animate-pulse" />
               <span>
-                DMR: <strong className="text-zinc-100">{rfMetrics.dmrChunks} {rfMetrics.dmrChunks === 1 ? 'Burst' : 'Bursts'}</strong> ({rfMetrics.dmrWireBudget} B Wire Budget • PQC Hybrid Encapsulation)
+                DMR: <strong className="text-slate-900 dark:text-zinc-100">{rfMetrics.dmrChunks} {rfMetrics.dmrChunks === 1 ? 'Burst' : 'Bursts'}</strong> ({rfMetrics.dmrWireBudget} B Wire Budget • PQC Hybrid Encapsulation)
               </span>
             </div>
           </div>
@@ -736,8 +736,8 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
 
         {/* Offline Daemon Notice */}
         {!isDaemonOnline && (
-          <div className="bg-amber-950/60 border border-amber-600/60 text-amber-300 font-mono text-[10px] px-2 py-1 rounded flex items-center space-x-1.5 mb-1.5">
-            <HardDrive className="w-3 h-3 text-amber-400 shrink-0" />
+          <div className="bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-600/60 text-amber-800 dark:text-amber-300 font-mono text-[10px] px-2 py-1 rounded flex items-center space-x-1.5 mb-1.5">
+            <HardDrive className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0" />
             <span>
               Station daemon unreachable on port :{stationPort || (isStationAlpha ? 5051 : 5052)}. Messages will be stored in browser IndexedDB outbox.
             </span>
@@ -752,7 +752,7 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
             onKeyDown={handleKeyDown}
             rows={isSplitMode ? 2 : 3}
             placeholder={`Transmit tactical packet from ${stationName} to ${targetStationName}...`}
-            className="flex-1 bg-[#0B0F17] border border-zinc-700/80 focus:border-cyan-500 rounded-lg p-2 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none transition-all"
+            className="flex-1 bg-white dark:bg-[#0B0F17] border border-slate-300 dark:border-zinc-700/80 focus:border-cyan-500 rounded-lg p-2 text-xs font-mono text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none transition-all shadow-inner"
           />
 
           <button

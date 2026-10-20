@@ -377,60 +377,60 @@ export const ResearchLabView: React.FC = () => {
       {/* ========================================================================= */}
       {/* TOP COMMAND HEADER: Telemetry Status Pills & Sub-Navigation               */}
       {/* ========================================================================= */}
-      <div className="bg-[#131B2E] border border-zinc-800 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <Cpu className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-base font-bold font-mono text-zinc-100 tracking-tight">
+            <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-base font-bold font-mono text-slate-900 dark:text-zinc-100 tracking-tight">
               Scientific LPI-CGAN Research Lab
             </h2>
 
             {/* Checkpoint Status Pill */}
             {!isTampered ? (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-700/70 bg-emerald-950/60 text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-700/70 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 [MANIFEST VERIFIED: MATCH]
               </span>
             ) : (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-rose-700/70 bg-rose-950/60 text-rose-400 font-bold flex items-center gap-1 animate-pulse">
-                <AlertTriangle className="w-3 h-3 text-rose-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-700/70 dark:bg-rose-950/60 dark:text-rose-400 font-bold flex items-center gap-1 animate-pulse">
+                <AlertTriangle className="w-3 h-3 text-rose-500 dark:text-rose-400" />
                 [INTEGRITY LOCKOUT: HASH MISMATCH]
               </span>
             )}
 
             {/* Apple Silicon Hardware Status Pill */}
             {envMetadata?.mps_available ? (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-cyan-700/70 bg-cyan-950/60 text-cyan-400 font-bold flex items-center gap-1">
-                <Microchip className="w-3 h-3 text-cyan-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700/70 dark:bg-cyan-950/60 dark:text-cyan-400 font-bold flex items-center gap-1">
+                <Microchip className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
                 [APPLE SILICON: MPS READY]
               </span>
             ) : (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-amber-700/70 bg-amber-950/60 text-amber-400 font-bold flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/60 dark:text-amber-400 font-bold flex items-center gap-1">
+                <Cpu className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                 [CPU FALLBACK ACTIVE]
               </span>
             )}
 
             {/* SDR Hardware Status Pill */}
             {sdrStatus?.device_connected ? (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-700/70 bg-emerald-950/60 text-emerald-400 font-bold flex items-center gap-1">
-                <Radio className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-700/70 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <Radio className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 [SDR: ONLINE]
               </span>
             ) : (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-amber-700/70 bg-amber-950/60 text-amber-400 font-bold flex items-center gap-1">
-                <Radio className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/60 dark:text-amber-400 font-bold flex items-center gap-1">
+                <Radio className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                 [SDR: STANDBY / DISCONNECTED]
               </span>
             )}
           </div>
-          <p className="text-xs text-zinc-400 mt-1 font-sans">
+          <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 font-sans">
             Cryptographic model governance, empirical physical layer neural modulation, and Apple Silicon MPS telemetry (lpi_v4)
           </p>
         </div>
 
         {/* Sub-tab Navigation */}
-        <div className="flex flex-wrap gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs font-mono">
+        <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-zinc-950 p-1 rounded-lg border border-slate-300 dark:border-zinc-800 text-xs font-mono">
           {(
             [
               { id: 'benchmarks', label: 'Benchmarks' },
@@ -445,10 +445,10 @@ export const ResearchLabView: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id)}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                 activeSubTab === tab.id
-                  ? 'bg-zinc-800 text-emerald-400 font-bold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-emerald-800 dark:bg-zinc-800 dark:text-emerald-400 font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               {tab.label}
@@ -487,28 +487,28 @@ export const ResearchLabView: React.FC = () => {
       {activeSubTab === 'benchmarks' && evalReport && (
         <div className="space-y-6">
           {/* Master 8/8 EW Gate Banner & Summary Cards */}
-          <div className="bg-[#151D2A] border border-emerald-500/30 p-4 rounded-xl shadow-[0_4px_24px_rgba(16,185,129,0.12)] space-y-4">
+          <div className="bg-emerald-50/50 dark:bg-[#151D2A] border border-emerald-300 dark:border-emerald-500/30 p-4 rounded-xl shadow-sm dark:shadow-[0_4px_24px_rgba(16,185,129,0.12)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-zinc-100">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-slate-900 dark:text-zinc-100">
                     Empirical Electronic Warfare (EW) Stealth Verification
                   </h3>
                 </div>
-                <p className="text-xs text-zinc-400 font-sans mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-zinc-400 font-sans mt-0.5">
                   Full 8-domain battery evaluated against AWGN Gaussian null hypothesis on 65,536 bits/test point
                 </p>
               </div>
 
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono px-3 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/80 font-bold shadow-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-mono px-3 py-1 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700/80 font-bold shadow-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   [8 / 8 EW GATES PASSED: OPTIMAL STEALTH]
                 </span>
                 <button
                   onClick={handleExportJSON}
-                  className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                   title="Export structured JSON report"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -516,7 +516,7 @@ export const ResearchLabView: React.FC = () => {
                 </button>
                 <button
                   onClick={handleExportCSV}
-                  className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                   title="Export tabular CSV metrics"
                 >
                   <Download className="w-3.5 h-3.5" />

@@ -30,18 +30,18 @@ export const InboxReceiptCard: React.FC<InboxReceiptCardProps> = ({
       onClick={onClick}
       className={`rounded-lg p-3 transition-all cursor-pointer relative overflow-hidden group ${
         isSelected
-          ? 'bg-[#1E293B] border border-emerald-400 ring-1 ring-emerald-400/50 shadow-[0_4px_24px_rgba(16,185,129,0.25)]'
-          : 'bg-[#131B2E] hover:bg-[#1E293B] border border-emerald-500/40 shadow-[0_4px_20px_rgba(16,185,129,0.12)]'
+          ? 'bg-emerald-50 dark:bg-[#1E293B] border border-emerald-400 ring-1 ring-emerald-400/50 shadow-md'
+          : 'bg-emerald-50/40 hover:bg-emerald-50/80 dark:bg-[#131B2E] dark:hover:bg-[#1E293B] border border-emerald-300 dark:border-emerald-500/40 shadow-xs'
       }`}
     >
       {/* Top Bar: Route, Type, and Emerald 3D Seal Badge */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center space-x-1.5 text-xs font-mono text-zinc-300 truncate">
-          <span className="text-zinc-400 font-semibold">{inboxItem.sender_endpoint_id}</span>
-          <ArrowRight className="w-3 h-3 text-emerald-400 shrink-0" />
-          <span className="text-emerald-300 font-semibold">{inboxItem.recipient_endpoint_id}</span>
+        <div className="flex items-center space-x-1.5 text-xs font-mono text-slate-700 dark:text-zinc-300 truncate">
+          <span className="text-slate-600 dark:text-zinc-400 font-semibold">{inboxItem.sender_endpoint_id}</span>
+          <ArrowRight className="w-3 h-3 text-emerald-500 dark:text-emerald-400 shrink-0" />
+          <span className="text-emerald-700 dark:text-emerald-300 font-semibold">{inboxItem.recipient_endpoint_id}</span>
           {inboxItem.message_type && (
-            <span className="ml-1 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-400 px-1.5 py-0.2 rounded font-sans uppercase">
+            <span className="ml-1 text-[10px] bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 border border-slate-300 px-1.5 py-0.2 rounded font-sans uppercase">
               {inboxItem.message_type}
             </span>
           )}
@@ -60,31 +60,31 @@ export const InboxReceiptCard: React.FC<InboxReceiptCardProps> = ({
         </div>
 
         {/* Emerald 3D Seal Badge */}
-        <div className="shrink-0 bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 font-mono text-[9px] font-bold px-2 py-0.5 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)] flex items-center space-x-1">
-          <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+        <div className="shrink-0 bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/80 dark:border-emerald-500/60 dark:text-emerald-300 font-mono text-[9px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center space-x-1">
+          <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>INBOX PERSISTED</span>
         </div>
       </div>
 
       {/* Storage Timestamp */}
-      <div className="text-[10px] font-mono text-zinc-400 mb-2 flex items-center space-x-1">
-        <span className="text-zinc-500">Stored:</span>
-        <span className="text-zinc-300">{formattedTimestamp}</span>
+      <div className="text-[10px] font-mono text-slate-600 dark:text-zinc-400 mb-2 flex items-center space-x-1">
+        <span className="text-slate-500 dark:text-zinc-500">Stored:</span>
+        <span className="text-slate-900 dark:text-zinc-300 font-medium">{formattedTimestamp}</span>
       </div>
 
       {/* Payload Preview */}
-      <div className="bg-[#0B0F17]/70 rounded p-2 border border-zinc-800/80 mb-2.5">
-        <p className="font-mono text-xs text-zinc-200 break-words whitespace-pre-wrap leading-relaxed line-clamp-3">
+      <div className="bg-white dark:bg-[#0B0F17]/70 rounded p-2.5 border border-slate-200 dark:border-zinc-800/80 mb-2.5 shadow-xs">
+        <p className="font-mono text-xs text-slate-900 dark:text-zinc-200 break-words whitespace-pre-wrap leading-relaxed line-clamp-3">
           {payloadSnippet}
         </p>
       </div>
 
       {/* Footer: Physical Storage Proof, Integrity Status & HMAC Signature */}
-      <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-zinc-800/60 text-[10px] font-mono">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-200 dark:border-zinc-800/60 text-[10px] font-mono">
         <div className="flex items-center space-x-2">
           {/* Storage Engine Tag */}
-          <span className="flex items-center space-x-1 text-zinc-400 bg-zinc-900/80 border border-zinc-700/60 px-1.5 py-0.5 rounded">
-            <Database className="w-2.5 h-2.5 text-emerald-400/80" />
+          <span className="flex items-center space-x-1 text-slate-700 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900/80 border border-slate-300 dark:border-zinc-700/60 px-1.5 py-0.5 rounded">
+            <Database className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400/80" />
             <span>SQLITE WAL STORAGE</span>
           </span>
 

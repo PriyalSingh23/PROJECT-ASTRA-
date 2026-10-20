@@ -393,12 +393,12 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#0B0F17] border border-zinc-800 rounded-xl max-w-7xl w-full mx-auto shadow-2xl h-[calc(100vh-8.5rem)] relative">
+    <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-zinc-800 rounded-xl max-w-7xl w-full mx-auto shadow-xl h-[calc(100vh-8.5rem)] relative">
       {/* Storage Ceiling Alert Banner (D-21) */}
       {isStorageNearCeiling && (
-        <div className="px-4 py-2 bg-amber-950/90 border-b border-amber-600/70 text-xs font-mono text-amber-200 flex items-center justify-between shrink-0 shadow-lg animate-pulse">
+        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/90 border-b border-amber-300 dark:border-amber-600/70 text-xs font-mono text-amber-900 dark:text-amber-200 flex items-center justify-between shrink-0 shadow-lg animate-pulse">
           <div className="flex items-center space-x-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+            <ShieldAlert className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
             <span>
               <strong>⚠️ LOCAL OUTBOX NEAR CEILING:</strong> {localOutbox.length}/500 items stored in IndexedDB.
               Flush outbox to prevent message discard.
@@ -418,22 +418,22 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
       {/* ========================================================================= */}
       {/* TACTICAL CONSOLE TOOLBAR & 3D VIEWPORT TOGGLE                              */}
       {/* ========================================================================= */}
-      <div className="px-4 py-2.5 bg-[#131B2E] border-b border-zinc-800 flex items-center justify-between flex-wrap gap-2.5 shrink-0">
+      <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#131B2E] border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between flex-wrap gap-2.5 shrink-0">
         {/* Left: Operator Station Selector (Single Viewport) & Swap Identity */}
         <div className="flex items-center space-x-2">
           {viewMode === 'single' ? (
             <>
-              <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold tracking-wider">
+              <span className="text-[10px] font-mono uppercase text-slate-600 dark:text-zinc-400 font-bold tracking-wider">
                 Operator Station:
               </span>
-              <div className="inline-flex rounded-lg bg-[#0B0F17] p-1 border border-zinc-800 text-xs font-mono shadow-inner">
+              <div className="inline-flex rounded-lg bg-slate-100 dark:bg-[#0B0F17] p-1 border border-slate-300 dark:border-zinc-800 text-xs font-mono shadow-inner">
                 <button
                   type="button"
                   onClick={() => setActiveSenderId('endpoint-a')}
-                  className={`px-3 py-1 rounded-md transition-all font-semibold flex items-center space-x-1.5 ${
+                  className={`px-3 py-1 rounded-md transition-all font-semibold flex items-center space-x-1.5 cursor-pointer ${
                     activeSenderId === 'endpoint-a'
-                      ? 'bg-cyan-600 text-white shadow-[0_0_10px_rgba(6,182,212,0.3)]'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-cyan-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Radio className="w-3.5 h-3.5" />
@@ -443,10 +443,10 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveSenderId('endpoint-b')}
-                  className={`px-3 py-1 rounded-md transition-all font-semibold flex items-center space-x-1.5 ${
+                  className={`px-3 py-1 rounded-md transition-all font-semibold flex items-center space-x-1.5 cursor-pointer ${
                     activeSenderId === 'endpoint-b'
-                      ? 'bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Radio className="w-3.5 h-3.5" />
@@ -459,21 +459,21 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                 type="button"
                 onClick={handleSwapStations}
                 title="Instant Station Identity Swap (⇄)"
-                className="p-1.5 rounded-lg bg-[#0B0F17] border border-zinc-800 text-zinc-300 hover:text-cyan-400 hover:border-cyan-500/50 transition-all flex items-center space-x-1.5 text-xs font-mono shadow-sm active:translate-y-0.5 cursor-pointer"
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-[#0B0F17] border border-slate-300 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/50 transition-all flex items-center space-x-1.5 text-xs font-mono shadow-xs active:translate-y-0.5 cursor-pointer"
               >
-                <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
+                <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 <span className="hidden sm:inline">Swap Identity</span>
               </button>
             </>
           ) : (
             <div className="flex items-center space-x-2 text-xs font-mono">
-              <span className="px-2.5 py-1 rounded bg-[#0B0F17] border border-cyan-500/40 text-cyan-300 font-bold flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="px-2.5 py-1 rounded bg-cyan-100 text-cyan-900 border border-cyan-300 dark:bg-[#0B0F17] dark:border-cyan-500/40 dark:text-cyan-300 font-bold flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
                 <span>Station Alpha</span>
               </span>
-              <span className="text-zinc-500 font-bold">&harr;</span>
-              <span className="px-2.5 py-1 rounded bg-[#0B0F17] border border-emerald-500/40 text-emerald-300 font-bold flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-slate-400 dark:text-zinc-500 font-bold">&harr;</span>
+              <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-[#0B0F17] dark:border-emerald-500/40 dark:text-emerald-300 font-bold flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                 <span>Station Bravo</span>
               </span>
             </div>
@@ -518,14 +518,14 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
         </div>
 
         {/* Center: 3D Tactical Viewport Toggle (Single Console vs Dual Split-Screen) */}
-        <div className="flex items-center space-x-1 bg-[#0B0F17] p-1 rounded-lg border border-zinc-800 text-xs font-mono shadow-inner">
+        <div className="flex items-center space-x-1 bg-slate-100 dark:bg-[#0B0F17] p-1 rounded-lg border border-slate-300 dark:border-zinc-800 text-xs font-mono shadow-inner">
           <button
             type="button"
             onClick={() => setViewMode('single')}
             className={`px-3 py-1 rounded-md flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === 'single'
-                ? 'bg-zinc-800 text-emerald-400 font-bold border border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-emerald-800 dark:bg-zinc-800 dark:text-emerald-400 font-bold border border-emerald-400 dark:border-emerald-500/50 shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
             }`}
           >
             <Square className="w-3.5 h-3.5" />
@@ -536,8 +536,8 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
             onClick={() => setViewMode('split')}
             className={`px-3 py-1 rounded-md flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === 'split'
-                ? 'bg-zinc-800 text-cyan-400 font-bold border border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-cyan-800 dark:bg-zinc-800 dark:text-cyan-400 font-bold border border-cyan-400 dark:border-cyan-500/50 shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
             }`}
           >
             <Columns2 className="w-3.5 h-3.5" />
@@ -548,26 +548,26 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
         {/* Right: Live Recipient Inboxes & Telemetry Summary */}
         <div className="flex items-center space-x-2 text-[10px] font-mono">
           {queueStats && queueStats.active_leases > 0 && (
-            <span className="hidden md:flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-950/70 border border-blue-500/40 text-blue-300">
-              <Layers className="w-3 h-3 text-blue-400" />
+            <span className="hidden md:flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-500/40 text-blue-900 dark:text-blue-300">
+              <Layers className="w-3 h-3 text-blue-500 dark:text-blue-400" />
               <span>Leases: {queueStats.active_leases}</span>
             </span>
           )}
 
-          <span className="px-2 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/40 text-cyan-300 flex items-center space-x-1 font-mono text-[10px] shadow-[0_0_8px_rgba(6,182,212,0.15)]">
-            <ShieldCheck className="w-3 h-3 text-cyan-400" />
+          <span className="px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950/40 border border-cyan-300 dark:border-cyan-500/40 text-cyan-900 dark:text-cyan-300 flex items-center space-x-1 font-mono text-[10px] shadow-xs">
+            <ShieldCheck className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
             <span>PQC HYBRID: ML-KEM-768</span>
           </span>
 
-          <span className="px-2 py-0.5 rounded bg-[#0B0F17] border border-cyan-500/40 text-cyan-300 flex items-center space-x-1">
-            <CheckCheck className="w-3 h-3 text-cyan-400" />
+          <span className="px-2 py-0.5 rounded bg-white dark:bg-[#0B0F17] border border-cyan-300 dark:border-cyan-500/40 text-cyan-900 dark:text-cyan-300 flex items-center space-x-1 shadow-xs">
+            <CheckCheck className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
             <span>
               Alpha Inbox: <strong className="font-bold">{inboxA.length}</strong>
             </span>
           </span>
 
-          <span className="px-2 py-0.5 rounded bg-[#0B0F17] border border-emerald-500/40 text-emerald-300 flex items-center space-x-1">
-            <CheckCheck className="w-3 h-3 text-emerald-400" />
+          <span className="px-2 py-0.5 rounded bg-white dark:bg-[#0B0F17] border border-emerald-300 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-300 flex items-center space-x-1 shadow-xs">
+            <CheckCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
             <span>
               Bravo Inbox: <strong className="font-bold">{inboxB.length}</strong>
             </span>

@@ -123,21 +123,21 @@ export const RelayInspectorDrawer: React.FC<RelayInspectorDrawerProps> = ({
   const elevationKm = (relay.position[1] * 2.5).toFixed(1)
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-96 bg-zinc-950/95 border-l border-zinc-800 backdrop-blur-md shadow-2xl flex flex-col text-zinc-200">
+    <div className="fixed inset-y-0 right-0 z-50 w-96 bg-white/95 dark:bg-zinc-950/95 border-l border-slate-200 dark:border-zinc-800 backdrop-blur-md shadow-2xl flex flex-col text-slate-800 dark:text-zinc-200">
       {/* Header */}
-      <div className="p-4 border-b border-zinc-800 flex items-start justify-between bg-zinc-900/40">
+      <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex items-start justify-between bg-slate-50 dark:bg-zinc-900/40">
         <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded bg-cyan-950/50 border border-cyan-800/60 text-cyan-400">
+          <div className="p-2 rounded bg-cyan-100 dark:bg-cyan-950/50 border border-cyan-300 dark:border-cyan-800/60 text-cyan-700 dark:text-cyan-400">
             <Radio className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-sm font-mono font-bold text-zinc-100 tracking-wide">
+              <h3 className="text-sm font-mono font-bold text-slate-900 dark:text-zinc-100 tracking-wide">
                 {relay.label}
               </h3>
               {getStatusBadge(relay.status, relay.failsafeCutoff)}
             </div>
-            <div className="flex items-center space-x-2 mt-0.5 text-[10px] font-mono text-zinc-400">
+            <div className="flex items-center space-x-2 mt-0.5 text-[10px] font-mono text-slate-500 dark:text-zinc-400">
               <span>{relay.id}</span>
               <span>·</span>
               <span className="text-cyan-400">{relay.sector}</span>

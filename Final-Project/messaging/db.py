@@ -11,7 +11,9 @@ DEFAULT_DB_PATH = os.path.abspath(
 )
 
 
-def get_engine(db_path: str = DEFAULT_DB_PATH):
+def get_engine(db_path: Optional[str] = None):
+    if not db_path:
+        db_path = DEFAULT_DB_PATH
     dir_name = os.path.dirname(os.path.abspath(db_path))
     if dir_name:
         os.makedirs(dir_name, exist_ok=True)
@@ -42,8 +44,10 @@ _engines = {}
 _session_factories = {}
 
 
-def get_session_factory(db_path: str = DEFAULT_DB_PATH):
+def get_session_factory(db_path: Optional[str] = None):
     global _engines, _session_factories
+    if not db_path:
+        db_path = DEFAULT_DB_PATH
     if db_path not in _session_factories:
         eng = get_engine(db_path)
         _engines[db_path] = eng
@@ -218,17 +222,20 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
 
 
 @contextmanager
-def get_db_session(db_path: str = None):
+def get_db_session(db_path: Optional[str] = None):
     """Transactional context manager for database operations."""
-    if db_path is None:
+    if not db_path:
         try:
             from flask import current_app, has_app_context
-            if has_app_context() and "DB_PATH" in current_app.config:
+            if has_app_context() and current_app.config.get("DB_PATH"):
                 db_path = current_app.config["DB_PATH"]
             else:
                 db_path = DEFAULT_DB_PATH
         except Exception:
             db_path = DEFAULT_DB_PATH
+
+    if not db_path:
+        db_path = DEFAULT_DB_PATH
 
     factory = get_session_factory(db_path)
     session: Session = factory()

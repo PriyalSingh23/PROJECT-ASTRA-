@@ -148,13 +148,13 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ endpoints, onRefresh }
   return (
     <div className="max-w-7xl w-full mx-auto space-y-6">
       {/* Overview Header */}
-      <div className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-xl flex items-center justify-between">
+      <div className="bg-white dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 p-4 rounded-xl flex items-center justify-between shadow-sm">
         <div>
-          <h2 className="text-base font-bold font-mono text-zinc-100 flex items-center space-x-2">
-            <Layers className="w-5 h-5 text-emerald-400" />
+          <h2 className="text-base font-bold font-mono text-slate-900 dark:text-zinc-100 flex items-center space-x-2">
+            <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <span>Devices, Multi-Transport Broker & Tactical Gateways</span>
           </h2>
-          <p className="text-xs text-zinc-400 font-sans mt-0.5">
+          <p className="text-xs text-slate-600 dark:text-zinc-400 font-sans mt-0.5">
             Configured stations, active transport routing, hardware safety lockout, and store-and-forward relays
           </p>
         </div>
@@ -164,7 +164,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ endpoints, onRefresh }
             loadData()
           }}
           disabled={loading}
-          className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-mono text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-300 dark:hover:text-zinc-100 font-mono text-xs flex items-center space-x-1.5 transition-colors cursor-pointer border border-slate-300 dark:border-transparent shadow-xs"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>

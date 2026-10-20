@@ -3,7 +3,7 @@ import os
 from typing import Optional
 from flask import Flask, render_template, send_from_directory, request
 from messaging.api import api_v1
-from messaging.db import init_db, get_db_session
+from messaging.db import init_db, get_db_session, DEFAULT_DB_PATH
 from messaging.retry_policy import RetryPolicy
 
 TEMPLATE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
@@ -22,17 +22,15 @@ def create_app(
     app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
     app.config["SECRET_KEY"] = os.environ.get("SHADOWCOMM_SECRET_KEY", "shadowcomm-dev-secret-key-offline-demo")
 
-    app.config["DB_PATH"] = db_path
+    effective_db_path = db_path or DEFAULT_DB_PATH
+    app.config["DB_PATH"] = effective_db_path
     app.config["STATION_ID"] = station_id
     app.config["STATION_NAME"] = station_name or ("Station Alpha" if station_id == "endpoint-a" else "Station Bravo" if station_id == "endpoint-b" else "Tactical Station")
     app.config["STATION_PORT"] = port or (5051 if station_id == "endpoint-a" else 5052 if station_id == "endpoint-b" else 5050)
     app.config["PEER_URL"] = peer_url
 
     # Initialize SQLite database and seed endpoints
-    if db_path:
-        init_db(db_path, station_id=station_id)
-    else:
-        init_db(station_id=station_id)
+    init_db(effective_db_path, station_id=station_id)
 
     # Recover stranded in-flight worker leases upon startup
     with get_db_session(db_path) as session:

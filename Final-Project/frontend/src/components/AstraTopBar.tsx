@@ -72,19 +72,35 @@ export function AstraTopBar({
           <span className="font-mono text-[var(--ink)]">{clock}</span>
         </div>
 
-        {/* Night Mode Switcher */}
-        <button
-          onClick={() => setIsNightMode(!isNightMode)}
-          className="neo-btn p-2 rounded-xl text-[var(--ink)]"
-          title={isNightMode ? 'Switch to Light Theme' : 'Switch to Night Theme'}
-          aria-label="Toggle Night Mode"
-        >
-          {isNightMode ? (
-            <Sun className="w-4 h-4 text-amber-400" />
-          ) : (
-            <Moon className="w-4 h-4 text-slate-600" />
-          )}
-        </button>
+        {/* Day / Night Mode Segmented Toggle Switch */}
+        <div className="neo-inset p-1 rounded-xl flex items-center gap-1 text-xs font-mono select-none">
+          <button
+            type="button"
+            onClick={() => setIsNightMode(false)}
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all text-[11px] font-bold cursor-pointer ${
+              !isNightMode
+                ? 'bg-amber-400 text-amber-950 shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+            title="Day Theme: High-contrast, clean light surfaces for daylight visibility"
+          >
+            <Sun className="w-3.5 h-3.5 text-amber-950" />
+            <span>DAY</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsNightMode(true)}
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all text-[11px] font-bold cursor-pointer ${
+              isNightMode
+                ? 'bg-cyan-600 text-white shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+            title="Night Theme: Tactical low-illumination dark mode"
+          >
+            <Moon className="w-3.5 h-3.5 text-cyan-200" />
+            <span>NIGHT</span>
+          </button>
+        </div>
 
         {/* Refresh Button */}
         <button
