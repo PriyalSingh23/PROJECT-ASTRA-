@@ -30,6 +30,11 @@ import {
   KeyringInfo,
   RotateKeysResponse,
   TamperTestResponse,
+  MeshNode,
+  MeshLink,
+  MeshActiveRoute,
+  MeshTopologyData,
+  MeshScenarioResponse,
 } from '../types'
 
 const BASE_URL = '/api/v1'
@@ -473,6 +478,34 @@ export class ApiClient {
       body: JSON.stringify(targetStationUrl ? { target_station_url: targetStationUrl } : {}),
     })
   }
+
+  // ==================== MULTI-HOP MESH ROUTING (PHASE 08) ====================
+  async getMeshTopology(): Promise<MeshTopologyData> {
+    return this.request<MeshTopologyData>('/topology/mesh')
+  }
+
+  async setRelayTelemetry(
+    relayId: string,
+    telemetry: { battery?: number; status?: string; queue_depth?: number; storage_pct?: number }
+  ): Promise<any> {
+    return this.request<any>(`/relays/${relayId}/telemetry`, {
+      method: 'POST',
+      body: JSON.stringify(telemetry),
+    })
+  }
+
+  async triggerMeshScenario(scenario: string): Promise<MeshScenarioResponse> {
+    return this.request<MeshScenarioResponse>('/relays/scenario', {
+      method: 'POST',
+      body: JSON.stringify({ scenario }),
+    })
+  }
+
+  async simulateRoute(): Promise<any> {
+    return this.request<any>('/mesh/route/simulate', {
+      method: 'POST',
+    })
+  }
 }
 
 export const api = new ApiClient('/api/v1')
@@ -506,6 +539,16 @@ export const rotateKeys = (client: ApiClient = api) => client.rotateKeys()
 export const zeroizeKeyring = (client: ApiClient = api) => client.zeroizeKeyring()
 export const simulateTamperTest = (targetStationUrl?: string, client: ApiClient = api) =>
   client.simulateTamperTest(targetStationUrl)
+export const getMeshTopology = (client: ApiClient = api) => client.getMeshTopology()
+export const setRelayTelemetry = (
+  relayId: string,
+  telemetry: { battery?: number; status?: string; queue_depth?: number; storage_pct?: number },
+  client: ApiClient = api
+) => client.setRelayTelemetry(relayId, telemetry)
+export const triggerMeshScenario = (scenario: string, client: ApiClient = api) =>
+  client.triggerMeshScenario(scenario)
+export const simulateRoute = (client: ApiClient = api) => client.simulateRoute()
+
 
 
 

@@ -781,4 +781,57 @@ export interface PQCKeyExchangeParams {
   aad_spec: string
 }
 
+// ---------------------------------------------------------------------------
+// Multi-Hop Ad-Hoc Mesh Routing & Relay Protocol (Phase 08)
+// ---------------------------------------------------------------------------
+export interface MeshNode {
+  id: string
+  display_name: string
+  node_type: string
+  status: string
+  battery_percentage: number
+  storage_used_pct: number
+  queue_depth: number
+  position: [number, number, number]
+  is_approved: boolean
+  failsafe_cutoff_active: boolean
+  sector: string
+}
+
+export interface MeshLink {
+  source: string
+  target: string
+  distance_km: number
+  max_range_km: number
+  rf_tier: 'GROUND_GROUND' | 'GROUND_UAV' | 'UAV_UAV'
+  latency_ms: number
+  is_active_route: boolean
+  is_broken?: boolean
+}
+
+export interface MeshActiveRoute {
+  source: string
+  destination: string
+  path: string[]
+  total_hops: number
+  estimated_latency_ms: number
+  route_status: 'OPTIMAL' | 'SUBOPTIMAL' | 'NO_ROUTE'
+}
+
+export interface MeshTopologyData {
+  nodes: MeshNode[]
+  links: MeshLink[]
+  active_route: MeshActiveRoute
+}
+
+export interface MeshScenarioResponse {
+  scenario: string
+  previous_path: string[]
+  new_path: string[]
+  reroute_event: string
+  convergence_latency_ms: number
+  status: string
+}
+
+
 
