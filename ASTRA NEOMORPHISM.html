@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#e9edf5" />
+<title>ASTRA — Signal Intelligence Workspace</title>
+<style>
+  :root {
+    --bg: #e9edf5;
+    --bg-deep: #e1e6f0;
+    --surface: #e9edf5;
+    --surface-2: #eef1f8;
+    --ink: #202a42;
+    --muted: #758097;
+    --faint: #9aa4b7;
+    --accent: #5968d9;
+    --accent-2: #7d8af0;
+    --cyan: #2aabb8;
+    --green: #2fa77a;
+    --amber: #c78d36;
+    --red: #cc6672;
+    --line: rgba(124, 137, 162, .20);
+    --shadow-dark: #cbd1df;
+    --shadow-light: #ffffff;
+    --raised: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
+    --raised-sm: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    --inset: inset 4px 4px 9px var(--shadow-dark), inset -4px -4px 9px var(--shadow-light);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:14px; letter-spacing:.005em; }
+  button, input, select, textarea { font:inherit; }
+  button { cursor:pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid rgba(89,104,217,.3); outline-offset:2px; }
+  .app-shell { min-height:100vh; display:grid; grid-template-columns:245px minmax(0,1fr); }
+  .sidebar { padding:24px 16px 18px; border-right:1px solid rgba(255,255,255,.6); display:flex; flex-direction:column; gap:25px; min-height:100vh; position:sticky; top:0; height:100vh; }
+  .brand { display:flex; align-items:center; gap:12px; padding:0 10px; }
+  .brand-mark { height:42px; width:42px; border-radius:14px; display:grid; place-items:center; color:var(--accent); background:var(--surface); box-shadow:var(--raised-sm); }
+  .brand-mark svg { width:24px; height:24px; }
+  .brand-name { font-size:21px; line-height:1; font-weight:800; letter-spacing:.13em; }
+  .brand-sub { color:var(--muted); font-size:10px; font-weight:650; letter-spacing:.13em; text-transform:uppercase; margin-top:5px; }
+  .workspace-chip { margin:0 6px; padding:14px; border-radius:17px; box-shadow:var(--inset); display:flex; gap:10px; align-items:center; }
+  .workspace-dot { width:9px; height:9px; background:var(--green); box-shadow:0 0 0 4px rgba(47,167,122,.12); border-radius:99px; flex:0 0 auto; }
+  .workspace-chip strong { display:block; font-size:12px; }
+  .workspace-chip small { display:block; margin-top:4px; color:var(--muted); font-size:10px; }
+  .nav-label { color:var(--faint); text-transform:uppercase; letter-spacing:.14em; font-weight:750; font-size:10px; padding:0 12px; margin-bottom:9px; }
+  .nav-list { display:flex; flex-direction:column; gap:7px; }
+  .nav-item { appearance:none; border:0; background:transparent; width:100%; padding:12px 13px; color:var(--muted); display:flex; align-items:center; gap:12px; border-radius:14px; text-align:left; font-weight:650; font-size:12px; transition:all .18s ease; }
+  .nav-item svg { height:18px; width:18px; stroke:currentColor; flex:0 0 auto; }
+  .nav-item:hover { color:var(--ink); background:rgba(255,255,255,.28); }
+  .nav-item.active { color:var(--accent); background:var(--surface); box-shadow:var(--raised-sm); }
+  .nav-badge { margin-left:auto; font-size:9px; padding:4px 6px; border-radius:6px; background:#dfe3fa; color:var(--accent); }
+  .sidebar-bottom { margin-top:auto; }
+  .help-card { padding:15px; border-radius:18px; box-shadow:var(--raised-sm); margin:0 4px 14px; }
+  .help-icon { height:28px; width:28px; display:grid; place-items:center; border-radius:10px; color:var(--accent); box-shadow:var(--inset); margin-bottom:12px; }
+  .help-card strong { display:block; font-size:12px; }
+  .help-card p { font-size:11px; line-height:1.5; color:var(--muted); margin:7px 0 12px; }
+  .text-action { border:0; padding:0; background:transparent; color:var(--accent); font-weight:750; font-size:11px; }
+  .profile { display:flex; align-items:center; gap:10px; padding:13px 9px 3px; border-top:1px solid var(--line); }
+  .avatar { display:grid; place-items:center; height:34px; width:34px; border-radius:12px; background:linear-gradient(140deg,#d5dafd,#eff1ff); color:#525db1; font-weight:800; box-shadow:var(--raised-sm); font-size:11px; }
+  .profile strong { display:block; font-size:11px; }
+  .profile small { display:block; color:var(--muted); font-size:10px; margin-top:3px; }
+  .main { min-width:0; padding:24px clamp(18px,3vw,42px) 38px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:27px; }
+  .breadcrumbs { color:var(--muted); font-size:11px; display:flex; align-items:center; gap:8px; }
+  .breadcrumbs strong { color:var(--ink); font-weight:750; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .system-status { display:flex; gap:8px; align-items:center; color:var(--muted); padding:9px 12px; border-radius:12px; box-shadow:var(--inset); font-size:10px; font-weight:700; white-space:nowrap; }
+  .system-status .dot { height:7px; width:7px; border-radius:50%; background:var(--green); }
+  .icon-button { display:grid; place-items:center; height:38px; width:38px; border:0; border-radius:13px; background:var(--surface); color:var(--muted); box-shadow:var(--raised-sm); position:relative; }
+  .icon-button svg { height:17px; width:17px; stroke:currentColor; }
+  .icon-button:hover { color:var(--accent); transform:translateY(-1px); }
+  .page-header { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:22px; }
+  .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-weight:800; font-size:9px; margin-bottom:9px; }
+  h1 { font-size:clamp(24px,3vw,32px); line-height:1.12; letter-spacing:-.045em; margin:0; font-weight:800; }
+  .page-description { color:var(--muted); line-height:1.6; margin:9px 0 0; max-width:620px; font-size:12px; }
+  .header-actions { display:flex; gap:10px; align-items:center; flex-shrink:0; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; background:var(--surface); border-radius:12px; min-height:39px; padding:0 15px; color:var(--ink); font-size:11px; font-weight:750; box-shadow:var(--raised-sm); transition:transform .16s, box-shadow .16s; white-space:nowrap; }
+  .btn svg { height:15px; width:15px; stroke:currentColor; }
+  .btn:hover { transform:translateY(-1px); }
+  .btn:active { box-shadow:var(--inset); transform:translateY(0); }
+  .btn.primary { background:linear-gradient(135deg,#6572e1,#5661ce); color:#fff; box-shadow:5px 5px 12px #c6cae3,-3px -3px 9px #fff; }
+  .btn.danger { color:var(--red); }
+  .btn.small { min-height:31px; padding:0 10px; border-radius:9px; font-size:10px; }
+  .simulation-banner { display:flex; align-items:center; gap:11px; padding:11px 14px; border:1px solid rgba(199,141,54,.18); background:rgba(255,248,230,.44); border-radius:13px; margin:0 0 19px; color:#87682e; font-size:10px; line-height:1.4; }
+  .simulation-banner svg { width:17px; height:17px; stroke:currentColor; flex:0 0 auto; }
+  .simulation-banner strong { font-weight:800; }
+  .view { display:none; animation:fadeIn .22s ease; }
+  .view.active { display:block; }
+  @keyframes fadeIn { from {opacity:0; transform:translateY(3px)} to {opacity:1; transform:translateY(0)} }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; margin-bottom:17px; }
+  .stat-card { padding:18px; border-radius:var(--radius); box-shadow:var(--raised); min-width:0; }
+  .stat-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .stat-label { color:var(--muted); font-size:10px; font-weight:750; }
+  .stat-icon { width:31px; height:31px; display:grid; place-items:center; border-radius:11px; color:var(--accent); box-shadow:var(--inset); }
+  .stat-icon svg { width:15px; height:15px; stroke:currentColor; }
+  .stat-value { font-size:26px; letter-spacing:-.045em; font-weight:800; margin-top:13px; white-space:nowrap; }
+  .stat-value span { font-size:12px; letter-spacing:0; font-weight:700; color:var(--muted); }
+  .stat-foot { color:var(--muted); font-size:10px; margin-top:7px; display:flex; gap:6px; align-items:center; }
+  .trend { color:var(--green); font-weight:800; }
+  .panel { min-width:0; border-radius:var(--radius); padding:19px; background:var(--surface); box-shadow:var(--raised); }
+  .panel-header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:17px; }
+  .panel-title { margin:0; font-size:13px; letter-spacing:-.015em; font-weight:800; }
+  .panel-subtitle { margin:5px 0 0; font-size:10px; color:var(--muted); line-height:1.5; }
+  .panel-tools { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .select { background:var(--surface); border:0; border-radius:10px; color:var(--muted); padding:8px 25px 8px 10px; font-size:10px; box-shadow:var(--inset); max-width:100%; }
+  .subtle-label { font-size:9px; color:var(--muted); font-weight:700; }
+  .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr); gap:17px; margin-bottom:17px; }
+  .chart-wrap { width:100%; position:relative; min-height:190px; }
+  canvas { display:block; width:100%; height:200px; }
+  .chart-legend { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:7px; color:var(--muted); font-size:10px; }
+  .legend-item { display:inline-flex; align-items:center; gap:6px; }
+  .legend-swatch { width:7px; height:7px; border-radius:50%; display:inline-block; background:var(--accent); }
+  .legend-swatch.cyan { background:var(--cyan); }
+  .legend-swatch.green { background:var(--green); }
+  .mini-badge { display:inline-flex; align-items:center; gap:5px; border-radius:7px; padding:5px 7px; font-size:9px; font-weight:800; background:#e0f3eb; color:#298e68; }
+  .mini-badge.neutral { background:#e3e7f1; color:var(--muted); }
+  .mini-badge.purple { background:#e0e4fb; color:var(--accent); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:10px; min-width:500px; }
+  th { color:var(--muted); text-align:left; padding:11px 12px; font-size:9px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; border-bottom:1px solid var(--line); }
+  td { padding:12px; border-bottom:1px solid rgba(124,137,162,.13); color:#48536b; }
+  tbody tr:last-child td { border-bottom:0; }
+  td strong { color:var(--ink); font-weight:750; }
+  .quality { height:6px; border-radius:99px; overflow:hidden; width:75px; background:#dbe0eb; box-shadow:var(--inset); }
+  .quality span { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--cyan),var(--accent-2)); }
+  .lower-grid { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr); gap:17px; }
+  .activity-list { display:flex; flex-direction:column; gap:0; }
+  .activity { display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:10px; align-items:start; padding:11px 0; border-bottom:1px solid rgba(124,137,162,.14); }
+  .activity:last-child { border:0; padding-bottom:0; }
+  .activity-icon { height:29px; width:29px; display:grid; place-items:center; border-radius:10px; color:var(--accent); box-shadow:var(--inset); }
+  .activity-icon svg { width:14px; height:14px; stroke:currentColor; }
+  .activity strong { font-size:10px; font-weight:800; display:block; }
+  .activity p { font-size:10px; margin:4px 0 0; color:var(--muted); line-height:1.5; }
+  .activity time { font-size:9px; color:var(--faint); white-space:nowrap; }
+  .workflow-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:17px; }
+  .step { padding:14px 12px; border-radius:15px; box-shadow:var(--inset); display:flex; gap:10px; align-items:center; min-width:0; }
+  .step-num { flex:0 0 auto; display:grid; place-items:center; width:26px; height:26px; border-radius:9px; background:#dfe3fa; color:var(--accent); font-size:10px; font-weight:850; }
+  .step strong { display:block; font-size:10px; }
+  .step small { display:block; color:var(--muted); font-size:9px; margin-top:4px; }
+  .lab-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(270px,.8fr); gap:17px; }
+  .control-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+  .field { display:flex; flex-direction:column; gap:7px; min-width:0; }
+  .field label { font-weight:750; color:var(--muted); font-size:10px; }
+  .input, .textarea { width:100%; border:0; border-radius:11px; padding:11px 12px; color:var(--ink); background:var(--surface); box-shadow:var(--inset); outline-offset:3px; }
+  .input { height:39px; }
+  .textarea { resize:vertical; min-height:90px; }
+  .helper { font-size:9px; color:var(--muted); line-height:1.5; }
+  .range-row { display:flex; align-items:center; gap:12px; }
+  input[type=range] { accent-color:var(--accent); width:100%; }
+  .range-number { min-width:65px; text-align:right; font-weight:800; font-size:11px; }
+  .control-section { margin-bottom:19px; }
+  .control-section:last-child { margin-bottom:0; }
+  .control-section h3 { margin:0 0 12px; font-size:11px; }
+  .toggle-row { padding:11px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); }
+  .toggle-row:last-child { border-bottom:0; }
+  .toggle-row strong { display:block; font-size:10px; }
+  .toggle-row small { display:block; font-size:9px; color:var(--muted); margin-top:4px; }
+  .switch { width:37px; height:21px; background:#d5dae6; box-shadow:var(--inset); border:0; border-radius:99px; padding:3px; flex:0 0 auto; }
+  .switch span { display:block; width:15px; height:15px; background:#f8f9fd; box-shadow:1px 1px 3px #b7bece; border-radius:50%; transition:transform .2s; }
+  .switch[aria-checked=true] { background:#cdd2fb; }
+  .switch[aria-checked=true] span { transform:translateX(16px); background:var(--accent); }
+  .empty-state { padding:24px; text-align:center; color:var(--muted); font-size:11px; border-radius:15px; box-shadow:var(--inset); }
+  .signal-results { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+  .result-box { border-radius:13px; box-shadow:var(--inset); padding:13px; }
+  .result-box small { display:block; color:var(--muted); font-size:9px; }
+  .result-box strong { display:block; font-size:15px; margin-top:6px; }
+  .device-card { padding:16px; border-radius:16px; box-shadow:var(--inset); margin-bottom:12px; }
+  .device-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+  .device-art { width:45px; height:45px; border-radius:13px; display:grid; place-items:center; color:var(--accent); box-shadow:var(--raised-sm); }
+  .device-art svg { width:23px; height:23px; stroke:currentColor; }
+  .device-head strong { display:block; font-size:11px; }
+  .device-head small { display:block; margin-top:4px; font-size:9px; color:var(--muted); }
+  .device-meta { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:13px; }
+  .device-meta div { padding:9px; border-radius:9px; background:rgba(255,255,255,.25); }
+  .device-meta span { font-size:9px; color:var(--muted); display:block; }
+  .device-meta strong { display:block; font-size:10px; margin-top:5px; }
+  .full { width:100%; }
+  .model-hero { display:flex; align-items:center; gap:15px; padding:17px; border-radius:17px; box-shadow:var(--inset); margin-bottom:16px; }
+  .model-symbol { width:54px; height:54px; border-radius:16px; box-shadow:var(--raised-sm); color:var(--accent); display:grid; place-items:center; flex:0 0 auto; }
+  .model-symbol svg { width:28px; height:28px; stroke:currentColor; }
+  .model-hero h3 { margin:0; font-size:14px; }
+  .model-hero p { margin:6px 0 0; color:var(--muted); font-size:10px; line-height:1.5; }
+  .model-status { margin-left:auto; text-align:right; }
+  .model-status strong { display:block; font-size:11px; color:var(--green); }
+  .model-status small { display:block; color:var(--muted); font-size:9px; margin-top:4px; }
+  .progress-track { width:100%; height:8px; border-radius:99px; box-shadow:var(--inset); overflow:hidden; }
+  .progress-track span { display:block; width:0; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--cyan),var(--accent-2)); transition:width .3s; }
+  .progress-info { display:flex; justify-content:space-between; gap:12px; margin:8px 0 14px; font-size:9px; color:var(--muted); }
+  .sample-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .sample-card { border-radius:13px; padding:11px; box-shadow:var(--inset); }
+  .sample-card canvas { height:55px; }
+  .sample-card small { display:block; color:var(--muted); font-size:9px; margin-top:8px; }
+  .sample-card strong { font-size:10px; display:block; margin-top:3px; }
+  .chat-layout { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:17px; }
+  .chat-window { display:flex; flex-direction:column; min-height:440px; }
+  .chat-messages { flex:1; min-height:290px; display:flex; flex-direction:column; gap:12px; padding:10px 3px 18px; }
+  .message { max-width:78%; padding:12px 14px; border-radius:15px; box-shadow:var(--raised-sm); font-size:11px; line-height:1.5; }
+  .message.incoming { align-self:flex-start; border-bottom-left-radius:5px; }
+  .message.outgoing { align-self:flex-end; border-bottom-right-radius:5px; background:#e1e5fb; }
+  .message-meta { display:flex; gap:8px; align-items:center; margin-top:7px; color:var(--muted); font-size:9px; }
+  .message-compose { display:flex; align-items:flex-end; gap:9px; border-top:1px solid var(--line); padding-top:14px; }
+  .message-compose textarea { min-height:44px; max-height:100px; resize:vertical; flex:1; }
+  .security-list { display:flex; flex-direction:column; gap:12px; }
+  .security-row { display:flex; align-items:flex-start; gap:9px; }
+  .check-icon { width:22px; height:22px; border-radius:8px; display:grid; place-items:center; color:var(--green); box-shadow:var(--inset); flex:0 0 auto; font-size:12px; }
+  .security-row strong { display:block; font-size:10px; }
+  .security-row small { display:block; color:var(--muted); line-height:1.5; font-size:9px; margin-top:4px; }
+  .report-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:17px; }
+  .report-card { padding:16px; border-radius:17px; box-shadow:var(--raised); }
+  .report-card .report-icon { width:32px;height:32px;border-radius:11px;box-shadow:var(--inset);display:grid;place-items:center;color:var(--accent);margin-bottom:15px; }
+  .report-card strong { font-size:12px; display:block; }
+  .report-card p { font-size:10px; line-height:1.5; color:var(--muted); margin:6px 0 12px; }
+  .toast-region { position:fixed; right:22px; bottom:22px; z-index:20; display:flex; flex-direction:column; gap:9px; pointer-events:none; }
+  .toast { width:min(350px,calc(100vw - 32px)); border-radius:13px; padding:13px 15px; background:var(--surface); box-shadow:var(--raised); font-size:11px; line-height:1.45; animation:fadeIn .2s ease; }
+  .toast strong { display:block; margin-bottom:3px; }
+  .toast.error strong { color:var(--red); }
+  .footer-note { display:flex; justify-content:space-between; gap:12px; margin-top:25px; padding:16px 4px 0; border-top:1px solid var(--line); color:var(--faint); font-size:9px; }
+  .mobile-menu { display:none; }
+  .hidden { display:none !important; }
+  @media (max-width:1150px) {
+    .app-shell { grid-template-columns:215px minmax(0,1fr); }
+    .stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .dashboard-grid, .lower-grid { grid-template-columns:minmax(0,1fr); }
+  }
+  @media (max-width:850px) {
+    .app-shell { display:block; }
+    .sidebar { position:fixed; left:0; top:0; bottom:0; width:260px; height:100vh; z-index:30; background:var(--bg); box-shadow:12px 0 30px rgba(68,76,110,.12); transform:translateX(-110%); transition:transform .22s; }
+    .sidebar.open { transform:translateX(0); }
+    .main { padding:18px 16px 30px; }
+    .mobile-menu { display:grid; }
+    .topbar { margin-bottom:21px; }
+    .system-status { display:none; }
+    .page-header { align-items:flex-start; flex-direction:column; }
+    .header-actions { width:100%; }
+    .workflow-steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .lab-grid, .chat-layout { grid-template-columns:minmax(0,1fr); }
+  }
+  @media (max-width:520px) {
+    .topbar-right { gap:7px; }
+    .breadcrumbs { font-size:10px; }
+    .header-actions .btn { flex:1; }
+    .stat-grid { gap:10px; }
+    .stat-card { padding:14px; border-radius:16px; }
+    .stat-value { font-size:22px; }
+    .panel { padding:15px; border-radius:17px; }
+    .control-grid, .signal-results, .report-grid { grid-template-columns:minmax(0,1fr); }
+    .sample-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .workflow-steps { gap:8px; }
+    .step { padding:11px 8px; gap:7px; }
+    .step strong { font-size:9px; }
+    .footer-note { flex-direction:column; }
+    .model-hero { align-items:flex-start; flex-wrap:wrap; }
+    .model-status { margin-left:69px; text-align:left; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 14.5 7.5 10l3.2 3.2L17.5 6l3.5 3.5"/><path d="M16 6h5v5"/><circle cx="6.5" cy="17.5" r="1.5"/></svg></div>
+      <div><div class="brand-name">ASTRA</div><div class="brand-sub">Signal intelligence</div></div>
+    </div>
+    <div class="workspace-chip"><span class="workspace-dot"></span><div><strong>Research workspace</strong><small>Local simulation · v0.9.2</small></div></div>
+    <div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="13" width="7" height="8" rx="2"/></svg>Overview</button>
+        <button class="nav-item" data-view="spectrum"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M3 12h2l2-7 4 14 3-10 2 6h5"/><path d="M3 21h18" opacity=".5"/></svg>Spectrum lab <span class="nav-badge">LAB</span></button>
+        <button class="nav-item" data-view="waveform"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M2 12h3l2-7 4 14 3-11 2 7h3l2-3h1"/></svg>Waveform analysis</button>
+        <button class="nav-item" data-view="models"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9zM9 1v3m6-3v3M9 20v3m6-3v3M1 9h3m-3 6h3m16-6h3m-3 6h3"/></svg>CGAN studio</button>
+        <button class="nav-item" data-view="hardware"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 9h2m3 0h2m3 0h1M7 14h10M8 19v2m8-2v2"/></svg>RF hardware</button>
+        <button class="nav-item" data-view="messages"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-7.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 8h5"/></svg>Secure message lab</button>
+        <button class="nav-item" data-view="reports"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7m-7 4h7"/></svg>Reports & exports</button>
+      </nav>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="help-card"><div class="help-icon">?</div><strong>New to ASTRA?</strong><p>Follow the guided path to explore a signal without changing hardware settings.</p><button class="text-action" id="helpBtn">Open quick guide ↗</button></div>
+      <div class="profile"><div class="avatar">AS</div><div><strong>ASTRA Operator</strong><small>Research access · Local</small></div><button class="icon-button" id="settingsBtn" title="Workspace settings" aria-label="Workspace settings" style="margin-left:auto;width:31px;height:31px;box-shadow:none"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1.8-1.6 2.8-1.3-.6a7.9 7.9 0 0 1-1.7 1l-.2 1.4h-3.2l-.2-1.4a7.9 7.9 0 0 1-1.7-1l-1.3.6-1.6-2.8 1.1-.8A8.2 8.2 0 0 1 8.8 13l-1.3-.8 1.6-2.8 1.4.5a7.7 7.7 0 0 1 1.7-1l.2-1.4h3.2l.2 1.4a7.7 7.7 0 0 1 1.7 1l1.4-.5 1.6 2.8-1.3.8a8.2 8.2 0 0 1 .2 2Z" transform="translate(-1 -1) scale(.97)"/></svg></button></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px"><button class="icon-button mobile-menu" id="mobileMenu" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="breadcrumbs"><span>ASTRA</span><span>›</span><strong id="breadcrumbCurrent">Overview</strong></div></div>
+      <div class="topbar-right"><div class="system-status"><span class="dot"></span><span id="systemStatusText">Systems nominal</span><span style="color:var(--faint)">·</span><span id="clock">--:--:--</span></div><button class="icon-button" id="refreshBtn" title="Refresh demo data" aria-label="Refresh demo data"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9a7 7 0 0 1 12-2L20 12M4 12l2.5 6a7 7 0 0 0 12-2"/></svg></button><button class="icon-button" id="notificationsBtn" title="Activity notifications" aria-label="Activity notifications"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button></div>
+    </header>
+
+    <div class="page-header"><div><div class="eyebrow" id="pageEyebrow">Operational overview</div><h1 id="pageTitle">Signal intelligence, at a glance.</h1><p class="page-description" id="pageDescription">A clear view of signal health, model readiness, and the current analysis session.</p></div><div class="header-actions"><button class="btn" id="exportQuick"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg>Export snapshot</button><button class="btn primary" id="startSessionBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="m9 5 10 7-10 7z"/></svg><span id="startSessionLabel">Start session</span></button></div></div>
+    <div class="simulation-banner" role="note"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg><span><strong>Demo / simulation mode.</strong> Waveforms, spectrum values, model runs, and device states on this page are generated locally for UI testing. No SDR is connected and no RF transmission is performed by this standalone file.</span></div>
+
+    <!-- OVERVIEW -->
+    <section class="view active" id="view-overview" aria-labelledby="pageTitle">
+      <div class="stat-grid">
+        <article class="stat-card"><div class="stat-top"><span class="stat-label">Signal-to-noise ratio</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 18V6m6 12V9m6 9V4m6 14v-7"/></svg></span></div><div class="stat-value" id="statSnr">18.6 <span>dB</span></div><div class="stat-foot"><span class="trend">↑ 2.4 dB</span><span>versus previous window</span></div></article>
+        <article class="stat-card"><div class="stat-top"><span class="stat-label">Center frequency</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/></svg></span></div><div class="stat-value" id="statFreq">915 <span>MHz</span></div><div class="stat-foot"><span class="mini-badge purple">ISM profile</span><span>simulated tuning</span></div></article>
+        <article class="stat-card"><div class="stat-top"><span class="stat-label">Model confidence</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 19V5m0 14h16M7 15l4-5 3 2 5-7"/></svg></span></div><div class="stat-value" id="statConfidence">94.2 <span>%</span></div><div class="stat-foot"><span class="trend">+1.8%</span><span>last demo evaluation</span></div></article>
+        <article class="stat-card"><div class="stat-top"><span class="stat-label">Samples analyzed</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 4h16v16H4zM8 8h8v8H8zM1 9h3m-3 6h3m16-6h3m-3 6h3"/></svg></span></div><div class="stat-value" id="statSamples">2.4 <span>M</span></div><div class="stat-foot"><span class="mini-badge neutral">Local buffer</span><span>since session start</span></div></article>
+      </div>
+      <div class="workflow-steps" aria-label="Recommended workflow"><div class="step"><span class="step-num">01</span><div><strong>Configure</strong><small>Choose a signal profile</small></div></div><div class="step"><span class="step-num">02</span><div><strong>Analyze</strong><small>Inspect time & frequency</small></div></div><div class="step"><span class="step-num">03</span><div><strong>Classify</strong><small>Run demo CGAN workflow</small></div></div><div class="step"><span class="step-num">04</span><div><strong>Review</strong><small>Export your session</small></div></div></div>
+      <div class="dashboard-grid">
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Live waveform</h2><p class="panel-subtitle">Time-domain amplitude · generated demonstration signal</p></div><div class="panel-tools"><span class="mini-badge" id="waveLiveBadge"><span class="dot" style="width:5px;height:5px;background:currentColor;border-radius:50%"></span> LIVE DEMO</span><button class="icon-button" style="height:31px;width:31px;box-shadow:none" data-goto="waveform" title="Open waveform lab"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div><div class="chart-wrap"><canvas id="overviewWave" aria-label="Animated example waveform"></canvas></div><div class="chart-legend"><span class="legend-item"><span class="legend-swatch"></span>Amplitude</span><span class="legend-item"><span class="legend-swatch cyan"></span>Moving average</span><span style="margin-left:auto" id="waveReadout">Peak: 0.82 · RMS: 0.41</span></div></article>
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Frequency spectrum</h2><p class="panel-subtitle">Relative power by frequency bin</p></div><button class="icon-button" style="height:31px;width:31px;box-shadow:none" data-goto="spectrum" title="Open spectrum lab"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M5 19V9m5 10V4m5 15v-7m5 7V7M3 21h18"/></svg></button></div><div class="chart-wrap"><canvas id="overviewSpectrum" aria-label="Example frequency spectrum"></canvas></div><div class="chart-legend"><span class="legend-item"><span class="legend-swatch cyan"></span>Power (dBFS)</span><span class="legend-item"><span class="legend-swatch" style="background:var(--amber)"></span>Peak marker</span></div></article>
+      </div>
+      <div class="lower-grid">
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Parameter comparison</h2><p class="panel-subtitle">Compare illustrative presets at a glance</p></div><button class="btn small" data-goto="spectrum">Open comparison ↗</button></div><div class="table-wrap"><table><thead><tr><th>Signal profile</th><th>Bandwidth</th><th>SNR</th><th>Model score</th><th>Quality</th></tr></thead><tbody id="overviewCompareBody"></tbody></table></div></article>
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Recent activity</h2><p class="panel-subtitle">Local workspace events</p></div><span class="mini-badge neutral">This session</span></div><div class="activity-list" id="activityList"><div class="activity"><div class="activity-icon">✓</div><div><strong>Workspace initialized</strong><p>Demo signal profile loaded successfully.</p></div><time>now</time></div><div class="activity"><div class="activity-icon">≈</div><div><strong>Signal preview ready</strong><p>Time and frequency plots are rendering locally.</p></div><time>1m</time></div><div class="activity"><div class="activity-icon">▦</div><div><strong>Model artifact detected</strong><p>CGAN studio available in demo mode.</p></div><time>2m</time></div></div></article>
+      </div>
+    </section>
+
+    <!-- SPECTRUM -->
+    <section class="view" id="view-spectrum">
+      <div class="lab-grid">
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Frequency analyzer</h2><p class="panel-subtitle">Inspect the simulated power spectrum and its peak estimate.</p></div><span class="mini-badge purple">FFT VIEW</span></div><div class="chart-wrap"><canvas id="labSpectrum" style="height:300px" aria-label="Frequency analyzer graph"></canvas></div><div class="chart-legend"><span class="legend-item"><span class="legend-swatch cyan"></span>Power spectrum</span><span class="legend-item"><span class="legend-swatch" style="background:var(--amber)"></span>Peak estimate</span></div><div class="signal-results"><div class="result-box"><small>Peak frequency</small><strong id="peakFreqResult">915.0 MHz</strong></div><div class="result-box"><small>Peak power</small><strong id="peakPowerResult">−24.6 dBFS</strong></div><div class="result-box"><small>Occupied bandwidth</small><strong id="occupiedBwResult">1.8 MHz</strong></div></div></article>
+        <div>
+          <article class="panel" style="margin-bottom:17px"><div class="panel-header"><div><h2 class="panel-title">Analyzer controls</h2><p class="panel-subtitle">Tune the demonstration view.</p></div></div><div class="control-section"><div class="field"><label for="centerFreq">Center frequency</label><div class="range-row"><input id="centerFreq" type="range" min="100" max="2400" value="915" step="5"><span class="range-number" id="centerFreqValue">915 MHz</span></div></div></div><div class="control-grid"><div class="field"><label for="sampleRate">Sample rate</label><select class="select" id="sampleRate"><option value="1">1 MS/s</option><option value="2" selected>2 MS/s</option><option value="5">5 MS/s</option><option value="10">10 MS/s</option><option value="20">20 MS/s</option></select></div><div class="field"><label for="fftSize">FFT size</label><select class="select" id="fftSize"><option>512</option><option selected>1024</option><option>2048</option><option>4096</option><option>8192</option></select></div><div class="field"><label for="windowFn">Window function</label><select class="select" id="windowFn"><option>Hann</option><option>Hamming</option><option>Blackman</option><option>Rectangular</option></select></div><div class="field"><label for="averaging">Averaging</label><select class="select" id="averaging"><option>1×</option><option selected>4×</option><option>8×</option><option>16×</option></select></div></div><div style="display:flex;gap:9px;margin-top:17px"><button class="btn primary full" id="applySpectrum">Apply settings</button><button class="btn" id="resetSpectrum">Reset</button></div></article>
+          <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Profile comparison</h2><p class="panel-subtitle">Preset estimates · not measured RF results</p></div></div><div class="table-wrap"><table style="min-width:0"><thead><tr><th>Profile</th><th>BW</th><th>SNR</th><th>Score</th></tr></thead><tbody id="spectrumCompareBody"></tbody></table></div><p class="helper" style="margin:14px 0 0">Values are illustrative and intended to help compare settings before connecting real measurement data.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- WAVEFORM -->
+    <section class="view" id="view-waveform">
+      <div class="lab-grid">
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Time-domain analysis</h2><p class="panel-subtitle">Explore amplitude, noise, modulation shape, and a rolling view.</p></div><div class="panel-tools"><span id="waveRunStatus" class="mini-badge">RUNNING</span><button class="btn small" id="pauseWave">Pause</button></div></div><div class="chart-wrap"><canvas id="labWave" style="height:320px" aria-label="Detailed simulated time-domain waveform"></canvas></div><div class="chart-legend"><span class="legend-item"><span class="legend-swatch"></span>I channel</span><span class="legend-item"><span class="legend-swatch cyan"></span>Q channel</span><span class="legend-item"><span class="legend-swatch" style="background:var(--faint)"></span>Zero reference</span></div><div class="signal-results"><div class="result-box"><small>Peak amplitude</small><strong id="peakAmplitude">0.82 FS</strong></div><div class="result-box"><small>RMS amplitude</small><strong id="rmsAmplitude">0.41 FS</strong></div><div class="result-box"><small>Sample rate</small><strong id="waveSampleRate">2 MS/s</strong></div></div></article>
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Signal configuration</h2><p class="panel-subtitle">Adjust a synthetic signal generator.</p></div></div><div class="control-section"><div class="field"><label for="waveType">Signal profile</label><select class="input" id="waveType"><option value="qpsk">QPSK-like composite</option><option value="tone">Single tone</option><option value="chirp">Linear chirp</option><option value="ofdm">OFDM-like multicarrier</option><option value="noise">Noise only</option></select></div></div><div class="control-section"><div class="field"><label for="waveFreq">Relative frequency</label><div class="range-row"><input type="range" id="waveFreq" min="1" max="12" value="5"><span class="range-number" id="waveFreqValue">5.0 kHz</span></div></div></div><div class="control-section"><div class="field"><label for="noiseLevel">Noise level</label><div class="range-row"><input type="range" id="noiseLevel" min="0" max="50" value="12"><span class="range-number" id="noiseLevelValue">12%</span></div></div></div><div class="control-section"><div class="field"><label for="amplitude">Signal amplitude</label><div class="range-row"><input type="range" id="amplitude" min="10" max="100" value="72"><span class="range-number" id="amplitudeValue">72%</span></div></div></div><div style="display:flex;gap:9px"><button class="btn primary full" id="applyWave">Apply profile</button><button class="btn" id="resetWave">Reset</button></div><p class="helper" style="margin:15px 0 0">The generated waveform is a visual demo. It is not sampled from a connected receiver.</p></article>
+      </div>
+    </section>
+
+    <!-- CGAN -->
+    <section class="view" id="view-models">
+      <div class="lab-grid">
+        <div>
+          <article class="panel" style="margin-bottom:17px"><div class="panel-header"><div><h2 class="panel-title">CGAN model studio</h2><p class="panel-subtitle">Prototype the generation and classification workflow.</p></div><span class="mini-badge neutral">LOCAL DEMO</span></div><div class="model-hero"><div class="model-symbol"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="m7 6.5 3 4m7-4-3 4m-7 7 3-4m7 4-3-4"/></svg></div><div><h3>Conditional Generator + Discriminator</h3><p>Generate synthetic signal examples from a selected condition and view demo quality metrics.</p></div><div class="model-status"><strong id="modelReadyStatus">Ready</strong><small>ASTRA-CGAN · demo</small></div></div><div class="control-grid"><div class="field"><label for="modelCondition">Condition label</label><select class="input" id="modelCondition"><option>QPSK</option><option>16-QAM</option><option>OFDM</option><option>GFSK</option><option>Noise</option></select></div><div class="field"><label for="batchSize">Batch size</label><select class="input" id="batchSize"><option>8</option><option selected>16</option><option>32</option><option>64</option></select></div><div class="field"><label for="modelSteps">Demo steps</label><select class="input" id="modelSteps"><option>100</option><option selected>250</option><option>500</option><option>1000</option></select></div><div class="field"><label for="modelSeed">Random seed</label><input class="input" id="modelSeed" type="number" min="0" max="999999" value="42"></div></div><div style="display:flex;gap:9px;margin-top:16px"><button class="btn primary" id="runModel"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="m9 5 10 7-10 7z"/></svg>Run demo generation</button><button class="btn" id="resetModel">Reset studio</button></div><div style="margin-top:19px"><div class="panel-header" style="margin-bottom:8px"><div><h2 class="panel-title">Run progress</h2><p class="panel-subtitle" id="modelProgressText">Ready to create a local demo batch.</p></div><strong id="modelProgressPct" style="font-size:11px">0%</strong></div><div class="progress-track"><span id="modelProgressBar"></span></div><div class="progress-info"><span id="modelStepLabel">No run started</span><span id="modelTimeLabel">—</span></div></div></article>
+          <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Generated sample gallery</h2><p class="panel-subtitle">Illustrative outputs generated in your browser.</p></div><span id="sampleCount" class="mini-badge neutral">3 samples</span></div><div class="sample-grid" id="sampleGrid"><div class="sample-card"><canvas id="sampleCan1"></canvas><small>Generated sample 01</small><strong>QPSK · synthetic</strong></div><div class="sample-card"><canvas id="sampleCan2"></canvas><small>Generated sample 02</small><strong>QPSK · synthetic</strong></div><div class="sample-card"><canvas id="sampleCan3"></canvas><small>Generated sample 03</small><strong>QPSK · synthetic</strong></div></div></article>
+        </div>
+        <div>
+          <article class="panel" style="margin-bottom:17px"><div class="panel-header"><div><h2 class="panel-title">Evaluation snapshot</h2><p class="panel-subtitle">Demo metrics only</p></div></div><div class="signal-results" style="grid-template-columns:1fr 1fr"><div class="result-box"><small>Generator loss</small><strong id="genLoss">0.284</strong></div><div class="result-box"><small>Discriminator loss</small><strong id="discLoss">0.317</strong></div><div class="result-box"><small>Condition accuracy</small><strong id="conditionAccuracy">94.2%</strong></div><div class="result-box"><small>Batch throughput</small><strong id="batchThroughput">—</strong></div></div><p class="helper" style="margin:13px 0 0">These numbers are sample placeholders, not model-inference results. Connect your trained generator/discriminator in the backend for real metrics.</p></article>
+          <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Pipeline guide</h2><p class="panel-subtitle">What happens in a real CGAN workflow?</p></div></div><div class="activity-list"><div class="activity"><div class="activity-icon">1</div><div><strong>Condition + noise vector</strong><p>Pass the requested modulation class and a latent vector to the generator.</p></div></div><div class="activity"><div class="activity-icon">2</div><div><strong>Generator creates sample</strong><p>The generator synthesizes a candidate IQ signal for that condition.</p></div></div><div class="activity"><div class="activity-icon">3</div><div><strong>Discriminator evaluates</strong><p>During training, real and synthetic examples help the networks improve.</p></div></div><div class="activity"><div class="activity-icon">4</div><div><strong>Validate before use</strong><p>Check class fidelity, spectral shape, SNR, and downstream classifier performance.</p></div></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- HARDWARE -->
+    <section class="view" id="view-hardware">
+      <div class="lab-grid">
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Radio hardware</h2><p class="panel-subtitle">Device selection and radio parameters · simulated connection only.</p></div><span class="mini-badge neutral" id="hardwareGlobalStatus">NO DEVICE</span></div><div class="device-card"><div class="device-head"><div class="device-art"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h2m3 0h2m3 0h1M7 14h10M8 19v2m8-2v2"/></svg></div><div><strong>USRP B210 / B200 family</strong><small>USB software-defined radio · UHD compatible</small></div><span class="mini-badge neutral" id="b210Status" style="margin-left:auto">Disconnected</span></div><div class="device-meta"><div><span>Interface</span><strong>USB 3.0</strong></div><div><span>RF channels</span><strong>2 × 2 MIMO</strong></div><div><span>Frequency range</span><strong>70 MHz – 6 GHz</strong></div><div><span>Connection</span><strong id="b210Connection">Not detected</strong></div></div><button class="btn full" id="connectB210">Simulate connect</button></div><div class="device-card"><div class="device-head"><div class="device-art"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="2.5" y="4" width="19" height="16" rx="3"/><path d="M6 8h3v8H6zm6 0h6M12 12h6m-6 4h6"/></svg></div><div><strong>USRP X310</strong><small>High-performance modular SDR platform</small></div><span class="mini-badge neutral" id="x310Status" style="margin-left:auto">Disconnected</span></div><div class="device-meta"><div><span>Interface</span><strong>10 GigE / 1 GigE</strong></div><div><span>RF daughterboards</span><strong>Modular</strong></div><div><span>FPGA</span><strong>Kintex-7</strong></div><div><span>Connection</span><strong id="x310Connection">Not detected</strong></div></div><button class="btn full" id="connectX310">Simulate connect</button></div><div class="simulation-banner" style="margin:5px 0 0"><span>To connect real hardware, implement a backend adapter using UHD and device discovery. Browser-only HTML cannot access USRP hardware directly.</span></div></article>
+        <article class="panel"><div class="panel-header"><div><h2 class="panel-title">RF configuration</h2><p class="panel-subtitle">Editable values for a future backend integration.</p></div></div><div class="control-grid"><div class="field"><label for="rfFrequency">Center frequency (MHz)</label><input class="input" id="rfFrequency" type="number" min="70" max="6000" value="915"></div><div class="field"><label for="rfRate">Sample rate (MS/s)</label><select class="input" id="rfRate"><option>1</option><option selected>2</option><option>5</option><option>10</option><option>20</option></select></div><div class="field"><label for="rfGain">RX gain (dB)</label><input class="input" id="rfGain" type="number" min="0" max="76" value="28"></div><div class="field"><label for="rfChannel">RX channel</label><select class="input" id="rfChannel"><option value="0">Channel A</option><option value="1">Channel B</option></select></div><div class="field"><label for="rfBandwidth">Analog bandwidth (MHz)</label><select class="input" id="rfBandwidth"><option>1</option><option selected>2</option><option>5</option><option>10</option><option>20</option></select></div><div class="field"><label for="rfAntenna">Antenna port</label><select class="input" id="rfAntenna"><option>RX2</option><option>TX/RX</option></select></div></div><div style="display:flex;gap:9px;margin-top:17px"><button class="btn primary full" id="applyRF">Save configuration</button><button class="btn" id="resetRF">Reset</button></div><div class="control-section" style="margin-top:23px"><h3>Safety interlocks</h3><div class="toggle-row"><div><strong>Require confirmation before TX</strong><small>Recommended for lab workflows</small></div><button class="switch" role="switch" aria-checked="true" id="txConfirmSwitch"><span></span></button></div><div class="toggle-row"><div><strong>Receive-only mode</strong><small>Blocks transmitter actions in connected workflows</small></div><button class="switch" role="switch" aria-checked="true" id="rxOnlySwitch"><span></span></button></div><p class="helper" style="margin-top:11px">This standalone UI never transmits RF. These switches are interface mock controls until connected to a validated backend.</p></div></article>
+      </div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="view" id="view-messages">
+      <div class="chat-layout"><article class="panel chat-window"><div class="panel-header"><div><h2 class="panel-title">Secure message lab</h2><p class="panel-subtitle">Compose test messages and inspect the local delivery flow.</p></div><span class="mini-badge purple">LOCAL DEMO</span></div><div class="chat-messages" id="chatMessages"><div class="message incoming">ASTRA demo channel is ready. Try sending a test message below.<div class="message-meta"><span>System</span><span>·</span><span>09:00:00</span></div></div><div class="message outgoing">Run a spectrum scan and compare the QPSK profile.<div class="message-meta"><span>Local operator</span><span>·</span><span>09:01:12</span><span class="mini-badge purple" style="padding:3px 5px">DEMO ENVELOPE</span></div></div><div class="message incoming">Acknowledged. This browser demo can model the UI flow; backend encryption and radio transport are not connected.<div class="message-meta"><span>ASTRA assistant</span><span>·</span><span>09:01:13</span></div></div></div><form class="message-compose" id="messageForm"><textarea class="textarea" id="messageInput" rows="1" placeholder="Write a test message…" aria-label="Message text" required></textarea><button class="btn primary" type="submit" aria-label="Send test message"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg>Send</button></form></article><div><article class="panel" style="margin-bottom:17px"><div class="panel-header"><div><h2 class="panel-title">Session diagnostics</h2><p class="panel-subtitle">Illustrative pipeline indicators</p></div></div><div class="security-list"><div class="security-row"><div class="check-icon">✓</div><div><strong>Message format</strong><small>Text payload accepted by local UI.</small></div></div><div class="security-row"><div class="check-icon">✓</div><div><strong>Envelope preview</strong><small>Demo metadata is attached to each outgoing message.</small></div></div><div class="security-row"><div class="check-icon" style="color:var(--amber)">!</div><div><strong>Cryptographic transport</strong><small>Not active. Do not treat the demo envelope as encryption.</small></div></div><div class="security-row"><div class="check-icon" style="color:var(--amber)">!</div><div><strong>Radio delivery</strong><small>No online link or acknowledgement service is connected.</small></div></div></div></article><article class="panel"><div class="panel-header"><div><h2 class="panel-title">Delivery controls</h2><p class="panel-subtitle">Test message-state transitions.</p></div></div><div class="toggle-row"><div><strong>Simulate delivery receipt</strong><small>Append a local ACK to sent messages</small></div><button class="switch" role="switch" aria-checked="true" id="ackSwitch"><span></span></button></div><div class="toggle-row"><div><strong>Show diagnostic metadata</strong><small>Include timestamp and sample ID</small></div><button class="switch" role="switch" aria-checked="false" id="metadataSwitch"><span></span></button></div><button class="btn full" id="clearMessages" style="margin-top:14px">Clear conversation</button></article></div></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="view" id="view-reports">
+      <div class="report-grid"><article class="report-card"><div class="report-icon">↧</div><strong>Session snapshot</strong><p>Download the current dashboard metrics and configuration as a JSON file.</p><button class="btn small full" id="downloadJson">Download JSON</button></article><article class="report-card"><div class="report-icon">▤</div><strong>Parameter comparison</strong><p>Export signal preset parameters and example scores in CSV format.</p><button class="btn small full" id="downloadCsv">Download CSV</button></article><article class="report-card"><div class="report-icon">≋</div><strong>Activity log</strong><p>Save recent local workspace events for a demo or development record.</p><button class="btn small full" id="downloadLog">Download activity log</button></article></div>
+      <article class="panel" style="margin-bottom:17px"><div class="panel-header"><div><h2 class="panel-title">Current session summary</h2><p class="panel-subtitle">Values visible in this prototype, ready for export.</p></div><span class="mini-badge neutral">LOCAL DATA</span></div><div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Status</th></tr></thead><tbody id="reportSummary"></tbody></table></div></article>
+      <article class="panel"><div class="panel-header"><div><h2 class="panel-title">Integration checklist</h2><p class="panel-subtitle">Items required to turn the prototype into a connected engineering tool.</p></div></div><div class="activity-list"><div class="activity"><div class="activity-icon">1</div><div><strong>Connect the analysis API</strong><p>Expose authenticated endpoints for real IQ buffers, FFT output, and measurement metadata.</p></div><span class="mini-badge neutral">TODO</span></div><div class="activity"><div class="activity-icon">2</div><div><strong>Connect model inference</strong><p>Load the trained CGAN/classifier on the server and return validated outputs.</p></div><span class="mini-badge neutral">TODO</span></div><div class="activity"><div class="activity-icon">3</div><div><strong>Implement UHD device service</strong><p>Use a local service to discover/configure a USRP; validate receive/transmit permissions independently.</p></div><span class="mini-badge neutral">TODO</span></div><div class="activity"><div class="activity-icon">4</div><div><strong>Wire secure messaging</strong><p>Use the project's audited crypto, Reed–Solomon framing, queue, and ACK implementation from a backend.</p></div><span class="mini-badge neutral">TODO</span></div></div></article>
+    </section>
+
+    <div class="footer-note"><span>ASTRA · Signal Intelligence Workspace</span><span>Standalone interactive prototype · No backend or radio hardware connected</span></div>
+  </main>
+</div>
+<div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    currentView: 'overview', waveRunning: true, sessionRunning: false,
+    centerFreq: 915, sampleRate: 2, fftSize: 1024, windowFn: 'Hann', averaging: '4×',
+    waveType: 'qpsk', waveFreq: 5, noise: 12, amplitude: .72,
+    hardware: { b210: false, x310: false }, rxOnly: true, txConfirm: true,
+    ack: true, metadata: false, events: [], modelRun: 0, modelTimer: null
+  };
+  const profiles = [
+    {name:'QPSK · balanced', bandwidth:'1.8 MHz', bw:1.8, snr:18.6, score:94.2, color:'var(--accent)'},
+    {name:'16-QAM · high rate', bandwidth:'3.2 MHz', bw:3.2, snr:14.1, score:88.7, color:'var(--cyan)'},
+    {name:'OFDM · robust', bandwidth:'5.0 MHz', bw:5.0, snr:21.3, score:96.1, color:'var(--green)'},
+    {name:'GFSK · narrowband', bandwidth:'0.4 MHz', bw:.4, snr:12.8, score:86.4, color:'var(--amber)'}
+  ];
+  const titles = {
+    overview:['Operational overview','Signal intelligence, at a glance.','A clear view of signal health, model readiness, and the current analysis session.'],
+    spectrum:['Signal analysis','Understand the frequency domain.','Tune the analysis view, locate spectral peaks, and compare signal presets side by side.'],
+    waveform:['Signal analysis','See the signal in time.','Adjust a synthetic IQ waveform and inspect amplitude, noise, and signal-shape changes.'],
+    models:['Model workspace','Explore the CGAN pipeline.','Run a browser-side demonstration of conditional generation and review the workflow before wiring real inference.'],
+    hardware:['Hardware workspace','Configure the radio layer.','Preview device states and editable parameters for a future UHD-backed local service.'],
+    messages:['Communication workspace','Test the messaging flow.','Exercise the compose, message-state, and acknowledgement UI without implying real encryption or radio delivery.'],
+    reports:['Session workspace','Turn analysis into a record.','Export the demo session, preset comparison, and activity log for review or development handoff.']
+  };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const colors = () => ({grid:'#d7ddea', text:'#8b95aa', wave:'#5968d9', q:'#2aabb8', amber:'#c78d36', fill:'rgba(89,104,217,.10)'});
+  function toast(title, message, type='') {
+    const node=document.createElement('div'); node.className='toast '+type;
+    const strong=document.createElement('strong'); strong.textContent=title;
+    const span=document.createElement('span'); span.textContent=message;
+    node.append(strong,span); $('toastRegion').append(node);
+    setTimeout(()=>{node.style.opacity='0';node.style.transform='translateY(5px)';setTimeout(()=>node.remove(),230)},3600);
+  }
+  function logEvent(title, message, icon='✓') {
+    state.events.unshift({title,message,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}),icon});
+    state.events=state.events.slice(0,12); renderActivity();
+  }
+  function renderActivity() {
+    const list=$('activityList'); if(!list) return;
+    list.innerHTML='';
+    const defaults=[
+      {title:'Workspace initialized',message:'Demo signal profile loaded successfully.',time:'09:00',icon:'✓'},
+      {title:'Signal preview ready',message:'Time and frequency plots are rendering locally.',time:'09:01',icon:'≈'},
+      {title:'Model artifact detected',message:'CGAN studio available in demo mode.',time:'09:02',icon:'▦'}
+    ];
+    (state.events.length?state.events:defaults).slice(0,4).forEach(ev=>{
+      const row=document.createElement('div');row.className='activity';
+      const ic=document.createElement('div');ic.className='activity-icon';ic.textContent=ev.icon;
+      const body=document.createElement('div');const strong=document.createElement('strong');strong.textContent=ev.title;const p=document.createElement('p');p.textContent=ev.message;body.append(strong,p);
+      const time=document.createElement('time');time.textContent=ev.time;row.append(ic,body,time);list.append(row);
+    });
+  }
+  function navigate(view) {
+    if(!titles[view]) return;
+    state.currentView=view;
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+    $('breadcrumbCurrent').textContent=({overview:'Overview',spectrum:'Spectrum lab',waveform:'Waveform analysis',models:'CGAN studio',hardware:'RF hardware',messages:'Secure message lab',reports:'Reports & exports'})[view];
+    const t=titles[view];$('pageEyebrow').textContent=t[0];$('pageTitle').textContent=t[1];$('pageDescription').textContent=t[2];
+    $('sidebar').classList.remove('open');
+    $('startSessionBtn').classList.toggle('hidden',view==='messages');
+    requestAnimationFrame(drawAll);
+  }
+  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));
+  document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.goto)));
+  $('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
+  $('helpBtn').addEventListener('click',()=>{navigate('overview');toast('Quick guide','Configure a profile → inspect the waveform and spectrum → run a CGAN demo → export the session. All readings in this file are simulated.')});
+  $('settingsBtn').addEventListener('click',()=>{navigate('hardware');toast('Workspace settings','RF configuration controls are available here. Values remain local to this page.')});
+
+  // Canvas chart renderer: scales with device pixel ratio and requires no third-party library.
+  function setupCanvas(canvas) {
+    if(!canvas) return null;
+    const rect=canvas.getBoundingClientRect();const dpr=Math.max(1,Math.min(window.devicePixelRatio||1,2));
+    const w=Math.max(20,rect.width),h=Math.max(20,rect.height);
+    if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+    const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w,h};
+  }
+  function drawGrid(ctx,w,h,pad={l:34,r:12,t:12,b:24},labels=true) {
+    const c=colors();ctx.clearRect(0,0,w,h);ctx.lineWidth=1;ctx.strokeStyle=c.grid;
+    for(let i=0;i<=4;i++){const y=pad.t+(h-pad.t-pad.b)*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();if(labels){ctx.fillStyle=c.text;ctx.font='9px system-ui';ctx.textAlign='right';ctx.fillText((1-i*.5).toFixed(1),pad.l-8,y+3)}}
+    for(let i=0;i<=6;i++){const x=pad.l+(w-pad.l-pad.r)*i/6;ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,h-pad.b);ctx.stroke();if(labels){ctx.fillStyle=c.text;ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText((i*10).toString(),x,h-7)}}
+    return {x0:pad.l,x1:w-pad.r,y0:pad.t,y1:h-pad.b};
+  }
+  function signalValue(i,n,phase=0,channel='i') {
+    const x=i/n*2*Math.PI;const f=state.waveFreq/5;const amp=state.amplitude;const noise=state.noise/100;
+    let val=0;
+    switch(state.waveType){
+      case 'tone': val=Math.sin(x*f+phase);break;
+      case 'chirp': val=Math.sin(x*(.35+f*.15)+x*x*.14+phase);break;
+      case 'ofdm': val=(Math.sin(x*2+phase)+.65*Math.sin(x*4.7+phase*.7)+.42*Math.sin(x*8.3+1.2+phase))/2.05;break;
+      case 'noise': val=(Math.sin(i*12.9898+phase)*43758.5453%1)*.85;break;
+      default: val=Math.sin(x*f+phase)*.66+Math.sin(x*(f*1.53)+phase*.75)*.21+Math.sin(x*(f*2.37)+1.1+phase)*.13;
+    }
+    const pseudo=(Math.sin(i*78.233+phase*17.3)*43758.5453)%1;
+    return (val+noise*pseudo*.7)*amp*(channel==='q'?.93:1);
+  }
+  function drawWave(id,detailed=false,mini=false,seed=0) {
+    const r=setupCanvas($(id));if(!r)return;const {ctx,w,h}=r;const pad=mini?{l:2,r:2,t:3,b:3}:detailed?{l:36,r:13,t:13,b:25}:{l:32,r:10,t:12,b:23};
+    const box=drawGrid(ctx,w,h,pad,!mini);const samples=mini?100:240;const mid=(box.y0+box.y1)/2;const ampScale=(box.y1-box.y0)*.43;
+    const ch=mini?'wave':null;
+    // zero reference
+    ctx.strokeStyle='#aeb7c9';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(box.x0,mid);ctx.lineTo(box.x1,mid);ctx.stroke();ctx.setLineDash([]);
+    const drawLine=(channel,color,width)=>{ctx.beginPath();for(let i=0;i<samples;i++){const v=mini?Math.sin(i*.19+seed)*.45+Math.sin(i*.47+seed*.3)*.22:signalValue(i+animationFrame*0.004,samples,channel==='q'?1.2:0,channel);const x=box.x0+(box.x1-box.x0)*i/(samples-1);const y=mid-v*ampScale;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.stroke()};
+    drawLine('i',colors().wave,1.9);if(detailed)drawLine('q',colors().q,1.35);
+    if(!mini){ctx.fillStyle=colors().text;ctx.font='9px system-ui';ctx.textAlign='left';ctx.fillText('Amplitude (FS)',3,10);ctx.textAlign='right';ctx.fillText('Time →',w-3,h-2)}
+  }
+  function spectrumPoints(n=96) {
+    const arr=[];const peakAt=0.5+((state.centerFreq-915)/3000);
+    for(let i=0;i<n;i++){
+      const x=i/(n-1);const main=Math.exp(-Math.pow((x-peakAt)/.055,2))*45;
+      const shoulder=Math.exp(-Math.pow((x-(peakAt-.13))/.035,2))*12;
+      const spur=Math.exp(-Math.pow((x-(peakAt+.18))/.02,2))*10;
+      const floor=-78+Math.sin(i*1.7)*2.3+Math.cos(i*.53)*1.8;
+      arr.push(Math.max(-92,Math.min(-12,floor+main+shoulder+spur)));
+    }return arr;
+  }
+  function drawSpectrum(id,tall=false) {
+    const r=setupCanvas($(id));if(!r)return;const {ctx,w,h}=r;const pad=tall?{l:43,r:13,t:17,b:29}:{l:34,r:10,t:12,b:23};
+    ctx.clearRect(0,0,w,h);const top=pad.t,base=h-pad.b;const left=pad.l,right=w-pad.r;
+    ctx.strokeStyle=colors().grid;ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const y=top+(base-top)*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillStyle=colors().text;ctx.font='9px system-ui';ctx.textAlign='right';ctx.fillText(String(-20-i*20),left-7,y+3)}
+    for(let i=0;i<=4;i++){const x=left+(right-left)*i/4;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,base);ctx.stroke();ctx.fillStyle=colors().text;ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText((state.centerFreq- state.sampleRate/2+i*state.sampleRate/2).toFixed(2),x,h-8)}
+    const points=spectrumPoints(128);const yFor=(db)=>base-(db+100)/90*(base-top);const xFor=i=>left+(right-left)*i/(points.length-1);
+    ctx.beginPath();points.forEach((p,i)=>{const x=xFor(i),y=yFor(p);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.lineTo(right,base);ctx.lineTo(left,base);ctx.closePath();ctx.fillStyle='rgba(42,171,184,.09)';ctx.fill();
+    ctx.beginPath();points.forEach((p,i)=>{const x=xFor(i),y=yFor(p);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.lineWidth=1.8;ctx.strokeStyle=colors().q;ctx.stroke();
+    const peak=Math.max(...points);const peakIndex=points.indexOf(peak);const px=xFor(peakIndex),py=yFor(peak);
+    ctx.setLineDash([4,4]);ctx.strokeStyle=colors().amber;ctx.beginPath();ctx.moveTo(px,top);ctx.lineTo(px,base);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=colors().amber;ctx.beginPath();ctx.arc(px,py,3.5,0,Math.PI*2);ctx.fill();
+    if(tall){ctx.fillStyle=colors().text;ctx.font='9px system-ui';ctx.textAlign='left';ctx.fillText('Power (dBFS)',3,10);ctx.textAlign='right';ctx.fillText('Frequency (MHz) →',w-3,h-2)}
+    const peakFreq=state.centerFreq+(peakIndex/(points.length-1)-.5)*state.sampleRate;
+    if($('peakFreqResult'))$('peakFreqResult').textContent=peakFreq.toFixed(2)+' MHz';if($('peakPowerResult'))$('peakPowerResult').textContent=peak.toFixed(1)+' dBFS';if($('occupiedBwResult'))$('occupiedBwResult').textContent=(state.sampleRate*(state.fftSize/1024)*.9).toFixed(1)+' MHz';
+  }
+  let animationFrame=0;
+  function drawAll(){
+    drawWave('overviewWave',false);drawSpectrum('overviewSpectrum',false);drawWave('labWave',true);
+    drawSpectrum('labSpectrum',true);drawWave('sampleCan1',false,true,1);drawWave('sampleCan2',false,true,2);drawWave('sampleCan3',false,true,3);
+    const peak=.72*state.amplitude/.72;const rms=(state.amplitude*.58).toFixed(2);if($('peakAmplitude'))$('peakAmplitude').textContent=peak.toFixed(2)+' FS';if($('rmsAmplitude'))$('rmsAmplitude').textContent=rms+' FS';
+    if($('waveSampleRate'))$('waveSampleRate').textContent=state.sampleRate+' MS/s';if($('waveReadout'))$('waveReadout').textContent='Peak: '+peak.toFixed(2)+' · RMS: '+rms;
+    if($('centerFreqValue'))$('centerFreqValue').textContent=state.centerFreq+' MHz';if($('statFreq'))$('statFreq').innerHTML=state.centerFreq+' <span>MHz</span>';
+    renderTables();renderReportSummary();
+  }
+  function renderTables(){
+    const build=(id,showQuality=false)=>{const body=$(id);if(!body)return;body.innerHTML='';profiles.forEach((p,i)=>{const tr=document.createElement('tr');const values=[p.name,p.bandwidth,p.snr.toFixed(1)+' dB',p.score.toFixed(1)+'%'];if(showQuality){tr.innerHTML=`<td><strong>${p.name}</strong></td><td>${p.bandwidth}</td><td>${p.snr.toFixed(1)} dB</td><td>${p.score.toFixed(1)}%</td><td><div class="quality"><span style="width:${p.score}%"></span></div></td>`}else{tr.innerHTML=`<td><strong>${p.name}</strong></td><td>${p.bandwidth}</td><td>${p.snr.toFixed(1)}</td><td>${p.score.toFixed(1)}%</td>`}body.append(tr)})};
+    build('overviewCompareBody',true);build('spectrumCompareBody',false);
+  }
+  function renderReportSummary(){const tbody=$('reportSummary');if(!tbody)return;const rows=[['Center frequency',state.centerFreq+' MHz','Analyzer controls','Configured'],['Sample rate',state.sampleRate+' MS/s','Analyzer controls','Configured'],['FFT size',state.fftSize+' points','Analyzer controls','Configured'],['Window function',state.windowFn,'Analyzer controls','Configured'],['Signal type',state.waveType.toUpperCase(),'Waveform lab','Synthetic'],['Hardware','B210: '+(state.hardware.b210?'simulated connected':'not connected')+' · X310: '+(state.hardware.x310?'simulated connected':'not connected'),'RF hardware','Demo only'],['Model','ASTRA-CGAN demo','CGAN studio','Not connected']];tbody.innerHTML='';rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td><span class="mini-badge neutral">${r[3]}</span></td>`;tbody.append(tr)})}
+
+  // Analyzer controls
+  $('centerFreq').addEventListener('input',e=>{state.centerFreq=Number(e.target.value);$('centerFreqValue').textContent=state.centerFreq+' MHz';$('statFreq').innerHTML=state.centerFreq+' <span>MHz</span>';drawSpectrum('labSpectrum',true);drawSpectrum('overviewSpectrum')});
+  $('sampleRate').addEventListener('change',e=>state.sampleRate=Number(e.target.value));
+  $('fftSize').addEventListener('change',e=>state.fftSize=Number(e.target.value));
+  $('windowFn').addEventListener('change',e=>state.windowFn=e.target.value);
+  $('averaging').addEventListener('change',e=>state.averaging=e.target.value);
+  $('applySpectrum').addEventListener('click',()=>{drawAll();logEvent('Analyzer updated',`${state.fftSize}-point FFT · ${state.sampleRate} MS/s · ${state.windowFn} window`,'≈');toast('Settings applied','The simulated spectrum has been refreshed with your analyzer settings.')});
+  $('resetSpectrum').addEventListener('click',()=>{$('centerFreq').value=915;$('sampleRate').value='2';$('fftSize').value='1024';$('windowFn').value='Hann';$('averaging').value='4×';state.centerFreq=915;state.sampleRate=2;state.fftSize=1024;state.windowFn='Hann';state.averaging='4×';drawAll();toast('Analyzer reset','Default demo settings restored.')});
+
+  // Waveform controls
+  function updateWaveLabels(){$('waveFreqValue').textContent=state.waveFreq.toFixed(1)+' kHz';$('noiseLevelValue').textContent=state.noise+'%';$('amplitudeValue').textContent=Math.round(state.amplitude*100)+'%'}
+  $('waveFreq').addEventListener('input',e=>{state.waveFreq=Number(e.target.value);updateWaveLabels()});
+  $('noiseLevel').addEventListener('input',e=>{state.noise=Number(e.target.value);updateWaveLabels()});
+  $('amplitude').addEventListener('input',e=>{state.amplitude=Number(e.target.value)/100;updateWaveLabels()});
+  $('waveType').addEventListener('change',e=>state.waveType=e.target.value);
+  $('applyWave').addEventListener('click',()=>{drawAll();logEvent('Waveform profile applied',`${state.waveType.toUpperCase()} · ${state.waveFreq} kHz · noise ${state.noise}%`,'≈');toast('Waveform updated','The time-domain preview now reflects your selected synthetic profile.')});
+  $('resetWave').addEventListener('click',()=>{$('waveType').value='qpsk';$('waveFreq').value=5;$('noiseLevel').value=12;$('amplitude').value=72;state.waveType='qpsk';state.waveFreq=5;state.noise=12;state.amplitude=.72;updateWaveLabels();drawAll();toast('Waveform reset','Default synthetic QPSK-like profile restored.')});
+  $('pauseWave').addEventListener('click',()=>{state.waveRunning=!state.waveRunning;$('pauseWave').textContent=state.waveRunning?'Pause':'Resume';$('waveRunStatus').textContent=state.waveRunning?'RUNNING':'PAUSED';$('waveRunStatus').className='mini-badge '+(state.waveRunning?'':'neutral');if(state.waveRunning)toast('Waveform resumed','Synthetic waveform animation is running.');else toast('Waveform paused','The waveform preview is paused.')});
+
+  // Session actions
+  $('startSessionBtn').addEventListener('click',()=>{state.sessionRunning=!state.sessionRunning;$('startSessionLabel').textContent=state.sessionRunning?'End session':'Start session';$('startSessionBtn').querySelector('svg').innerHTML=state.sessionRunning?'<path d="M6 6h12v12H6z"/>':'<path d="m9 5 10 7-10 7z"/>';$('systemStatusText').textContent=state.sessionRunning?'Demo session active':'Systems nominal';$('waveLiveBadge').textContent=state.sessionRunning?'LIVE DEMO':'LIVE DEMO';logEvent(state.sessionRunning?'Demo session started':'Demo session ended',state.sessionRunning?'Local visualization session started.':'Local visualization session ended.','✓');toast(state.sessionRunning?'Session started':'Session ended',state.sessionRunning?'Demo visualization session is active. No radio device was started.':'Demo session has been closed; local controls remain available.')});
+  $('refreshBtn').addEventListener('click',()=>{animationFrame+=1;drawAll();const snr=(17+Math.random()*3.5).toFixed(1);$('statSnr').innerHTML=snr+' <span>dB</span>';const conf=(91+Math.random()*7).toFixed(1);$('statConfidence').innerHTML=conf+' <span>%</span>';logEvent('Demo data refreshed','Generated a fresh visualization and illustrative metric sample.','↻');toast('Demo refreshed','New local sample metrics and chart frame generated.')});
+  $('notificationsBtn').addEventListener('click',()=>{toast('Workspace activity',state.events.length?state.events[0].title+': '+state.events[0].message:'No new events. Your workspace is ready.')});
+
+  // CGAN demo workflow (animation is intentionally browser-only).
+  function drawSampleCards(){drawWave('sampleCan1',false,true,Math.random()*8);drawWave('sampleCan2',false,true,Math.random()*8);drawWave('sampleCan3',false,true,Math.random()*8)}
+  $('runModel').addEventListener('click',()=>{
+    if(state.modelTimer)clearInterval(state.modelTimer);state.modelRun++;let pct=0;const condition=$('modelCondition').value;const steps=$('modelSteps').value;const batch=$('batchSize').value;
+    $('runModel').disabled=true;$('runModel').textContent='Generating…';$('modelReadyStatus').textContent='Running';$('modelReadyStatus').style.color='var(--amber)';$('modelProgressText').textContent='Generating a synthetic '+condition+' demonstration batch…';$('modelStepLabel').textContent='Initializing browser demo';$('modelTimeLabel').textContent='Started just now';
+    state.modelTimer=setInterval(()=>{pct=Math.min(100,pct+8+Math.random()*14);$('modelProgressBar').style.width=pct+'%';$('modelProgressPct').textContent=Math.round(pct)+'%';$('modelStepLabel').textContent=pct<35?'Preparing latent vectors':pct<70?'Generating candidate signals':'Updating demo metrics';if(pct>=100){clearInterval(state.modelTimer);state.modelTimer=null;$('runModel').disabled=false;$('runModel').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="m9 5 10 7-10 7z"/></svg>Run demo generation';$('modelReadyStatus').textContent='Ready';$('modelReadyStatus').style.color='var(--green)';$('modelProgressText').textContent='Demo batch created. This is not a real model inference.';$('modelTimeLabel').textContent='Completed';$('modelStepLabel').textContent=steps+' demo steps · batch '+batch;const seed=Number($('modelSeed').value)||0;$('genLoss').textContent=(.18+Math.random()*.2).toFixed(3);$('discLoss').textContent=(.2+Math.random()*.18).toFixed(3);$('conditionAccuracy').textContent=(88+Math.random()*10).toFixed(1)+'%';$('batchThroughput').textContent=(Number(batch)*(2+Math.random()*4)).toFixed(0)+' samples/s';$('sampleCount').textContent=batch+' demo samples';document.querySelectorAll('#sampleGrid .sample-card strong').forEach((el,i)=>el.textContent=condition+' · seed '+(seed+i));drawSampleCards();logEvent('CGAN demo batch generated',condition+' · batch '+batch+' · '+steps+' illustrative steps','▦');toast('Demo generation complete','Synthetic visual examples and placeholder metrics updated. No trained model was called.')}} ,130);
+  });
+  $('resetModel').addEventListener('click',()=>{if(state.modelTimer)clearInterval(state.modelTimer);state.modelTimer=null;$('runModel').disabled=false;$('runModel').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="m9 5 10 7-10 7z"/></svg>Run demo generation';$('modelReadyStatus').textContent='Ready';$('modelReadyStatus').style.color='var(--green)';$('modelProgressBar').style.width='0%';$('modelProgressPct').textContent='0%';$('modelProgressText').textContent='Ready to create a local demo batch.';$('modelStepLabel').textContent='No run started';$('modelTimeLabel').textContent='—';$('genLoss').textContent='0.284';$('discLoss').textContent='0.317';$('conditionAccuracy').textContent='94.2%';$('batchThroughput').textContent='—';$('sampleCount').textContent='3 samples';document.querySelectorAll('#sampleGrid .sample-card strong').forEach(el=>el.textContent='QPSK · synthetic');drawSampleCards();toast('Studio reset','CGAN demo panel returned to its initial state.')});
+
+  // Simulated hardware state controls.
+  function updateHardware(){const any=state.hardware.b210||state.hardware.x310;$('hardwareGlobalStatus').textContent=any?'SIMULATED LINK':'NO DEVICE';$('hardwareGlobalStatus').className='mini-badge '+(any?'':'neutral');[['b210','b210Status','b210Connection','connectB210','USRP B210'],['x310','x310Status','x310Connection','connectX310','USRP X310']].forEach(([key,status,connection,button,name])=>{$(status).textContent=state.hardware[key]?'Simulated link':'Disconnected';$(status).className='mini-badge '+(state.hardware[key]?'':'neutral');$(connection).textContent=state.hardware[key]?'Demo only':'Not detected';$(button).textContent=state.hardware[key]?'Disconnect demo link':'Simulate connect'})}
+  $('connectB210').addEventListener('click',()=>{state.hardware.b210=!state.hardware.b210;updateHardware();logEvent('B210 demo state changed',state.hardware.b210?'Simulated connection enabled. No hardware discovery occurred.':'Simulated connection disabled.','▦');toast(state.hardware.b210?'Simulated link enabled':'Simulated link disabled','This only changes the UI state; no USB device or UHD driver was accessed.')});
+  $('connectX310').addEventListener('click',()=>{state.hardware.x310=!state.hardware.x310;updateHardware();logEvent('X310 demo state changed',state.hardware.x310?'Simulated connection enabled. No hardware discovery occurred.':'Simulated connection disabled.','▦');toast(state.hardware.x310?'Simulated link enabled':'Simulated link disabled','This only changes the UI state; no radio hardware was accessed.')});
+  function setSwitch(btn, val){btn.setAttribute('aria-checked',String(val));}
+  $('txConfirmSwitch').addEventListener('click',()=>{state.txConfirm=!state.txConfirm;setSwitch($('txConfirmSwitch'),state.txConfirm);toast('Safety preference updated',state.txConfirm?'Transmit confirmation marked as required.':'Transmit confirmation marked as disabled in this demo UI.')});
+  $('rxOnlySwitch').addEventListener('click',()=>{state.rxOnly=!state.rxOnly;setSwitch($('rxOnlySwitch'),state.rxOnly);toast('Mode preference updated',state.rxOnly?'Receive-only mode marked as enabled.':'Receive-only mode marked as disabled in this demo UI.')});
+  $('applyRF').addEventListener('click',()=>{const f=Number($('rfFrequency').value),g=Number($('rfGain').value);if(!Number.isFinite(f)||f<70||f>6000){toast('Invalid frequency','Enter a center frequency between 70 and 6000 MHz.','error');return}if(!Number.isFinite(g)||g<0||g>76){toast('Invalid gain','Enter a receive gain between 0 and 76 dB.','error');return}state.centerFreq=f;state.sampleRate=Number($('rfRate').value);$('centerFreq').value=Math.max(100,Math.min(2400,f));$('sampleRate').value=String(state.sampleRate);drawAll();logEvent('RF config saved locally',`${f} MHz · ${state.sampleRate} MS/s · gain ${g} dB`,'▦');toast('Configuration saved','Values stored in this page only. They have not been sent to a radio.')});
+  $('resetRF').addEventListener('click',()=>{$('rfFrequency').value=915;$('rfRate').value='2';$('rfGain').value=28;$('rfChannel').value='0';$('rfBandwidth').value='2';$('rfAntenna').value='RX2';state.centerFreq=915;state.sampleRate=2;drawAll();toast('RF configuration reset','Default example radio parameters restored locally.')});
+
+  // Message UI. This does not encrypt or transmit the message.
+  function timeNow(){return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+  function appendMessage(text,side,label){const row=document.createElement('div');row.className='message '+side;const copy=document.createElement('div');copy.textContent=text;row.append(copy);const meta=document.createElement('div');meta.className='message-meta';const who=document.createElement('span');who.textContent=label;const sep=document.createElement('span');sep.textContent='·';const time=document.createElement('span');time.textContent=timeNow();meta.append(who,sep,time);if(state.metadata){const sample=document.createElement('span');sample.textContent='· demo-id '+Math.random().toString(16).slice(2,8);meta.append(sample)}if(side==='outgoing'){const badge=document.createElement('span');badge.className='mini-badge purple';badge.style.padding='3px 5px';badge.textContent='DEMO';meta.append(badge)}row.append(meta);$('chatMessages').append(row);$('chatMessages').scrollTop=$('chatMessages').scrollHeight;return row}
+  $('messageForm').addEventListener('submit',e=>{e.preventDefault();const text=$('messageInput').value.trim();if(!text)return;appendMessage(text,'outgoing','Local operator');$('messageInput').value='';logEvent('Test message composed','A local message was appended to the demo conversation.','↗');if(state.ack){setTimeout(()=>{appendMessage('Demo ACK received for the local UI message. No remote endpoint was contacted.','incoming','Simulated recipient');logEvent('Simulated ACK added','Local acknowledgement example appended.','✓')},550)}toast('Message added','Shown locally for interface testing; not encrypted or transmitted.')});
+  $('ackSwitch').addEventListener('click',()=>{state.ack=!state.ack;setSwitch($('ackSwitch'),state.ack);toast('Acknowledgement simulation',state.ack?'Demo ACK will be appended after each send.':'Automatic demo ACKs disabled.')});
+  $('metadataSwitch').addEventListener('click',()=>{state.metadata=!state.metadata;setSwitch($('metadataSwitch'),state.metadata);toast('Diagnostic metadata',state.metadata?'New messages will show a sample ID.':'Sample IDs hidden for new messages.')});
+  $('clearMessages').addEventListener('click',()=>{if(!window.confirm('Clear the local demo conversation?'))return;$('chatMessages').innerHTML='';toast('Conversation cleared','Local messages removed from the page.')});
+
+  // Export helpers
+  function downloadFile(filename,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Export ready',filename+' downloaded from local demo data.')}
+  function snapshot(){return {application:'ASTRA Signal Intelligence Workspace',exportedAt:new Date().toISOString(),mode:'standalone-demo',notice:'All metrics in this export are illustrative; no SDR or trained model is connected.',session:{running:state.sessionRunning,centerFrequencyMHz:state.centerFreq,sampleRateMSps:state.sampleRate,fftSize:state.fftSize,windowFunction:state.windowFn,averaging:state.averaging,signalType:state.waveType,relativeFrequencyKHz:state.waveFreq,noisePercent:state.noise,amplitude:state.amplitude},hardware:{b210Simulated:state.hardware.b210,x310Simulated:state.hardware.x310,receiveOnly:state.rxOnly,txConfirmation:state.txConfirm},exampleMetrics:{snrDb:$('statSnr').textContent,modelConfidence:$('statConfidence').textContent,samplesAnalyzed:$('statSamples').textContent},profiles:profiles,events:state.events}}
+  function exportSnapshot(){downloadFile('astra-session-snapshot.json',JSON.stringify(snapshot(),null,2),'application/json')}
+  function exportCsv(){const headers=['Profile','Bandwidth MHz','SNR dB','Demo Score Percent'];const lines=[headers.join(','),...profiles.map(p=>[p.name,p.bw,p.snr,p.score].join(','))];downloadFile('astra-parameter-comparison.csv',lines.join('\n'),'text/csv;charset=utf-8')}
+  function exportLog(){const lines=['ASTRA LOCAL ACTIVITY LOG','Exported: '+new Date().toISOString(),'Mode: standalone demo',''];(state.events.length?state.events:[{time:timeNow(),title:'Workspace initialized',message:'No additional user-triggered events yet.'}]).forEach(e=>lines.push(`[${e.time}] ${e.title} — ${e.message}`));downloadFile('astra-activity-log.txt',lines.join('\n'),'text/plain;charset=utf-8')}
+  $('exportQuick').addEventListener('click',exportSnapshot);$('downloadJson').addEventListener('click',exportSnapshot);$('downloadCsv').addEventListener('click',exportCsv);$('downloadLog').addEventListener('click',exportLog);
+
+  // Clock + animation. Redraw only while demo is running or if the page is visible.
+  function tick(){const d=new Date();$('clock').textContent=d.toLocaleTimeString([], {hour12:false});animationFrame++;if(state.waveRunning&&document.visibilityState==='visible'){drawWave('overviewWave',false);if(state.currentView==='waveform')drawWave('labWave',true)}requestAnimationFrame(()=>setTimeout(tick,90))}
+  window.addEventListener('resize',()=>requestAnimationFrame(drawAll));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')drawAll()});
+  // Prevent the whole page from losing state if an optional canvas isn't supported.
+  try { updateWaveLabels();renderTables();renderReportSummary();updateHardware();drawAll(); } catch(err) { console.error('ASTRA visualization error:',err);toast('Visualization warning','A chart could not be rendered in this browser. The other controls may still work.','error') }
+  tick();
+})();
+</script>
+</body>
+</html>

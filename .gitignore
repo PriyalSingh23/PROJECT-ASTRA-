@@ -1,0 +1,51 @@
+# Nested repository metadata: keep the original Final-Project repository local
+Final-Project/.git/
+
+# Python environments and caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Secrets and local configuration
+**/.env
+**/.env.*
+!**/.env.example
+
+# Frontend dependencies and build output
+**/node_modules/
+**/dist/
+**/build/
+
+# OS and editor files
+.DS_Store
+**/.DS_Store
+**/.idea/
+**/.vscode/
+
+# Local databases and transient database files
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Logs and temporary files
+**/*.log
+**/*.tmp
+**/*.orig.bak
+**/*.prepatch.bak
+
+# Large generated data and model artifacts: review separately before adding
+
+# Large local research datasets - keep on this Mac, not in Git
+Final-Project/data/*.hdf5
+Final-Project/data/*.h5
+
+# Local safety backups
+PROJECT-13OCT-safety-backup-*/
+
+# Local hardware credentials — never commit
+Final-Project/data/keys/*.keyring
+Final-Project/.env.example.save

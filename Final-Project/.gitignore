@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments & IDE
+.vscode/
+.idea/
+*.swp
+
+# RF IQ temporary binary dump files
+*.bin
+*.fc32
+
+# Database & scratch logs
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Sensitive environment configuration
+.env
+.env.local
+
+# Planning / IDE scratch (tracked)
+# .planning
+
+# OS and test caches
+.DS_Store
+.pytest_cache/
+
+# Node.js dependencies
+node_modules/
+*.npy
+
+

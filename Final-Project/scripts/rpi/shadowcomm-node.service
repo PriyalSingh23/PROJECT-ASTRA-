@@ -1,0 +1,25 @@
+[Unit]
+Description=SHADOWCOMM Node (Reliable Messaging + Motorola Bridge)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/shadowcomm/Final-Project
+EnvironmentFile=/home/%i/shadowcomm/Final-Project/.env
+ExecStart=/home/%i/shadowcomm/Final-Project/.venv/bin/python -m messaging.server --host 0.0.0.0 --port 5050
+Restart=on-failure
+RestartSec=3
+# Graceful shutdown so in-flight SQLite leases are released cleanly.
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

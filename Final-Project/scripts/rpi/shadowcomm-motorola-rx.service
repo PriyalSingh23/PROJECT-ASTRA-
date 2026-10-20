@@ -1,0 +1,35 @@
+[Unit]
+Description=SHADOWCOMM Motorola Radio Listener (receive-only)
+Documentation=file:@DIR@/docs/GROUND_COMMS_DEPLOYMENT.md
+After=sound.target
+Wants=sound.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@USER@
+SupplementaryGroups=audio gpio
+WorkingDirectory=@DIR@
+EnvironmentFile=-/etc/shadowcomm/motorola.env
+
+# Listen-only: this unit records the radio's speaker output and decodes it.
+# It keys nothing, so it is safe to leave running unattended. Received frames
+# are written to the journal and to the JSONL log given by --log below.
+ExecStart=@VENV@/bin/python @DIR@/scripts/motorola_rx_daemon.py --seconds 3 --loop --log /var/log/shadowcomm/motorola-rx.log
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Hardening: this process only needs to read audio and write its log.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/shadowcomm
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

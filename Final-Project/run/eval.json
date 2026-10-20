@@ -1,0 +1,162 @@
+{
+ "block_stealth": {
+  "ks_p": 0.8647080832037111,
+  "kurt": 2.9906857013702393,
+  "entropy": 0.9565979915772489,
+  "circ": 0.010745496705091267,
+  "papr": 0.0087368475281,
+  "scf": 1.0128778920696104,
+  "c42": -0.004792692331406377,
+  "wvd": 1.0166451512029184,
+  "Sc": 0.1399159959423817,
+  "n_pass": 8,
+  "adv_acc": 50.0,
+  "adv_auc": 0.550350546836853
+ },
+ "block_link": {
+  "2.0": {
+   "mf": 0.00335693359375,
+   "graph": 0.001220703125,
+   "field": 0.001708984375,
+   "fer": 0.1953125,
+   "n_bits_tested": 16384,
+   "n_frames_tested": 128,
+   "field_ci95": 0.0023423296085375816,
+   "fer_ci95": 0.26197497503095235,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": -57.3916408290165,
+   "coarse_hz": 0.0,
+   "n_frames": 128,
+   "dropped_frames": 4,
+   "pilot_snr_db": 20.166614776145394
+  },
+  "6.0": {
+   "mf": 0.00018310546875,
+   "graph": 0.0,
+   "field": 0.0,
+   "fer": 0.0,
+   "n_bits_tested": 16384,
+   "n_frames_tested": 128,
+   "field_ci95": 0.0001828282722735608,
+   "fer_ci95": 0.023132405251746757,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": -139.31278770216605,
+   "coarse_hz": 0.0,
+   "n_frames": 128,
+   "dropped_frames": 4,
+   "pilot_snr_db": 24.23115931623668
+  },
+  "10.0": {
+   "mf": 6.103515625e-05,
+   "graph": 0.0,
+   "field": 0.0,
+   "fer": 0.0,
+   "n_bits_tested": 16384,
+   "n_frames_tested": 128,
+   "field_ci95": 0.0001828282722735608,
+   "fer_ci95": 0.023132405251746757,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": 143.42871199238024,
+   "coarse_hz": 0.0,
+   "n_frames": 128,
+   "dropped_frames": 4,
+   "pilot_snr_db": 28.31510079058484
+  }
+ },
+ "block_message": {
+  "2.0": {
+   "fer": 0.0,
+   "ber": 0.00146484375,
+   "ber_ci95": 0.0025547927761910266,
+   "fer_ci95": 0.17074972298248092,
+   "n_bits_tested": 6144,
+   "msgs_ok": 16,
+   "n": 16,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": 7.71639551978325,
+   "coarse_hz": 0.0,
+   "n_frames": 48,
+   "dropped_frames": 6,
+   "pilot_snr_db": 20.709471393379605
+  },
+  "6.0": {
+   "fer": 0.0,
+   "ber": 0.0,
+   "ber_ci95": 0.0004874677820205786,
+   "fer_ci95": 0.17074972298248092,
+   "n_bits_tested": 6144,
+   "msgs_ok": 16,
+   "n": 16,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": -25.603937844629904,
+   "coarse_hz": 0.0,
+   "n_frames": 48,
+   "dropped_frames": 6,
+   "pilot_snr_db": 25.373798307069393
+  },
+  "10.0": {
+   "fer": 0.0,
+   "ber": 0.0,
+   "ber_ci95": 0.0004874677820205786,
+   "fer_ci95": 0.17074972298248092,
+   "n_bits_tested": 6144,
+   "msgs_ok": 16,
+   "n": 16,
+   "offset": 76,
+   "start_sample": 1228,
+   "cfo_hz": 86.64829807452082,
+   "coarse_hz": 0.0,
+   "n_frames": 48,
+   "dropped_frames": 6,
+   "pilot_snr_db": 27.77678035096927
+  }
+ },
+ "block_capture": {
+  "found": 128,
+  "ber": 0.0,
+  "sync_s": 0.06927708399598487,
+  "offset": 76,
+  "start_sample": 1228,
+  "cfo_hz": -18.426917635196716,
+  "coarse_hz": 0.0,
+  "n_frames": 128,
+  "dropped_frames": 4,
+  "pilot_snr_db": 24.07223423842751
+ },
+ "gate_band_db": [
+  5.0,
+  10.0
+ ],
+ "gate_worst_snr_db": 6.0,
+ "gate_note": "ber/fer = worst over SNR >= 5 dB (2 of 3 sweep points)",
+ "ci95": {
+  "ber_field_upper": 0.0001828282722735608,
+  "fer_upper": 0.17074972298248092,
+  "points_in_band": 2,
+  "n_bits_total": 32768,
+  "n_texts_total": 32,
+  "bits_per_point": 16384,
+  "texts_per_point": 16,
+  "texts_needed": 59,
+  "bits_needed": 299
+ },
+ "gate_vacuous": {
+  "adv_in_50s": "no --fit-warden: an untrained detector scores ~50% by construction, so this is not evidence",
+  "capture_decodes": "capture was synthesized here, so it tests the codec/framing, not the radio front end",
+  "fer<5%": "16 texts per point bounds a clean run at 17.1% (> 5%); 59 with none lost is what it takes to state the target"
+ },
+ "gate": {
+  "adv_in_50s": true,
+  "ks>0.05": true,
+  "ew>=7/8": true,
+  "ber_field<1%": true,
+  "fer<5%": true,
+  "capture_decodes": true
+ },
+ "all_pass": true
+}

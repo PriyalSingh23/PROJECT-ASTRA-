@@ -1,0 +1,39 @@
+{
+  "created_utc": "2026-10-20T12:45:13.451745+00:00",
+  "label": "gate1_montecarlo_rs255_223_qpsk",
+  "command": "/Users/sabhay/Downloads/PROJECT 13OCT/Final-Project/comms/experiments.py --preset montecarlo --mode rs255_223 --modulation qpsk --out results/gate1_baseline/montecarlo_rs_qpsk --label gate1_montecarlo_rs255_223_qpsk",
+  "config": {
+    "modulation": "qpsk",
+    "mode": "rs255_223",
+    "payload_bytes": 64,
+    "frames": 1000,
+    "ebn0_db": [
+      0.0,
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0,
+      7.0,
+      8.0,
+      9.0,
+      10.0
+    ],
+    "seed": 20261020,
+    "name": "gate1_montecarlo_rs255_223_qpsk",
+    "description": "Monte-Carlo baseline (1000 frames x 0..10 dB)"
+  },
+  "ebn0_definition": "Eb/N0 is energy per information payload bit relative to N0; Es/N0 is derived per point from info_bits / actual transmitted symbols (coded bits + symbol padding), i.e. code rate, framing overhead and padding are included in one exact ratio (comms/config.py).",
+  "latency_definition": "latency_* values are single-host processing time (time.perf_counter around the per-frame tx/rx chain), NOT over-the-air latency.",
+  "versions": {
+    "python": "3.12.9",
+    "platform": "macOS-13.4-x86_64-i386-64bit",
+    "numpy": "1.26.4",
+    "scipy": "1.15.2",
+    "matplotlib": "3.10.1",
+    "reedsolo": "1.7.0",
+    "cryptography": "44.0.2",
+    "torch": "2.2.2"
+  }
+}

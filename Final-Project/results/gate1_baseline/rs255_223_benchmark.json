@@ -1,0 +1,159 @@
+{
+  "generated_utc": "2026-10-20T11:49:48.350711+00:00",
+  "environment": {
+    "python": "3.12.9",
+    "platform": "macOS-13.4-x86_64-i386-64bit",
+    "numpy": "1.26.4",
+    "reedsolo": "1.7.0",
+    "cryptography": "44.0.2",
+    "torch": "2.2.2"
+  },
+  "parameters": {
+    "nsym": 32,
+    "ndata": 223,
+    "nparity": 32,
+    "ncode": 255,
+    "t_correctable_per_codeword": 16,
+    "code_rate": 0.8745098039215686,
+    "parity_overhead_pct": 14.3498,
+    "field": "GF(2^8), fcr=0, prim=0x11d, generator=2 (reedsolo)"
+  },
+  "correctness": {
+    "lengths_tested": [
+      0,
+      1,
+      222,
+      223,
+      224,
+      999,
+      4096
+    ],
+    "roundtrip_ok": 7,
+    "roundtrip_failures": 0
+  },
+  "injection": {
+    "trials": 25,
+    "note": "inject_symbol_errors flips n distinct symbols of one codeword; 'miscorrected' = decoder returned data that differs from the original (only possible beyond t; the framing CRC-32 rejects such frames end-to-end)",
+    "per_n": [
+      {
+        "symbol_errors_injected": 1,
+        "trials": 25,
+        "correct": 25,
+        "miscorrected": 0,
+        "failed": 0,
+        "corrected_symbols_reported": 25
+      },
+      {
+        "symbol_errors_injected": 4,
+        "trials": 25,
+        "correct": 25,
+        "miscorrected": 0,
+        "failed": 0,
+        "corrected_symbols_reported": 100
+      },
+      {
+        "symbol_errors_injected": 8,
+        "trials": 25,
+        "correct": 25,
+        "miscorrected": 0,
+        "failed": 0,
+        "corrected_symbols_reported": 200
+      },
+      {
+        "symbol_errors_injected": 16,
+        "trials": 25,
+        "correct": 25,
+        "miscorrected": 0,
+        "failed": 0,
+        "corrected_symbols_reported": 400
+      },
+      {
+        "symbol_errors_injected": 17,
+        "trials": 25,
+        "correct": 0,
+        "miscorrected": 0,
+        "failed": 25,
+        "corrected_symbols_reported": 0
+      },
+      {
+        "symbol_errors_injected": 20,
+        "trials": 25,
+        "correct": 0,
+        "miscorrected": 0,
+        "failed": 25,
+        "corrected_symbols_reported": 0
+      },
+      {
+        "symbol_errors_injected": 32,
+        "trials": 25,
+        "correct": 0,
+        "miscorrected": 0,
+        "failed": 25,
+        "corrected_symbols_reported": 0
+      }
+    ]
+  },
+  "malformed": {
+    "non_multiple_of_255_inputs": 5,
+    "structural_failures_detected": 5,
+    "truncated_stream_detected": true,
+    "empty_input_failed": false,
+    "empty_input_roundtrips_empty": true
+  },
+  "timing": {
+    "method": "time.perf_counter, single process, single host, Python/reedsolo - not a hardware claim",
+    "encode_frame_76B": {
+      "seconds_per_op": 0.0010440412499883678,
+      "ops_per_second": 957.81656137738,
+      "input_bytes_per_op": 76,
+      "mb_per_second": 0.07279405866468087
+    },
+    "decode_frame_76B_to255B": {
+      "seconds_per_op": 0.0016805022950211424,
+      "ops_per_second": 595.0601810915224,
+      "input_bytes_per_op": 255,
+      "mb_per_second": 0.1517403461783382
+    },
+    "encode_10000B": {
+      "seconds_per_op": 0.04730906664990471,
+      "ops_per_second": 21.137597310895462,
+      "input_bytes_per_op": 10000,
+      "mb_per_second": 0.21137597310895462
+    },
+    "decode_12675B_to10000B": {
+      "seconds_per_op": 0.07566237290011486,
+      "ops_per_second": 13.216609018066917,
+      "input_bytes_per_op": 11475,
+      "mb_per_second": 0.15166058848231787
+    }
+  },
+  "legacy_app_engine": {
+    "imported": true,
+    "codeword_equivalence": {
+      "trials": 50,
+      "identical_codewords": 50,
+      "note": "identical_codewords == trials means our encoder emits byte-identical RS codewords to app.py's RSCodec"
+    },
+    "legacy_roundtrip": {
+      "texts": 4,
+      "ok": 4
+    },
+    "corruption_within_t": {
+      "errors_injected": 16,
+      "legacy_returned_original_plaintext": true
+    },
+    "corruption_beyond_t": {
+      "errors_injected": 20,
+      "legacy_returned_original_plaintext": false,
+      "legacy_observed_output_preview": "[DECRYPT ERROR: 'utf-8' codec can't decode byte 0x9b in position 1: invalid star",
+      "our_layer_failed": true,
+      "our_layer_reason": "uncorrectable",
+      "note": "legacy decrypt substitutes zero blocks for uncorrectable codewords and swallows per-block failures; observed output recorded, not assumed"
+    }
+  },
+  "notes": [
+    "RS provides correction up to t=16 symbols/codeword and reliable detection beyond via syndrome re-check plus CRC-32; no claim is made that every pattern above t is detected by RS alone.",
+    "The comms RS layer reports failures (data=None) and never substitutes payload bytes; the legacy app.py decrypt path substitutes zero blocks - interop section records its observed behavior.",
+    "FEC success is integrity/correction, not authenticity."
+  ]
+}

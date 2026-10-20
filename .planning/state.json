@@ -1,0 +1,33 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v2.0 — Advanced Tactical Mesh, Cryptography & Hardware Field Suite",
+  "phases": [
+    {
+      "number": "6",
+      "name": "Multi-Database Physical Isolation & Dedicated Daemon Endpoints",
+      "status": "complete"
+    },
+    {
+      "number": "7",
+      "name": "Post-Quantum Hybrid Cryptography (ML-KEM / Kyber + AES-256-GCM)",
+      "status": "in_progress"
+    },
+    {
+      "number": "8",
+      "name": "Multi-Hop Ad-Hoc Mesh Routing & Relay Protocol",
+      "status": "pending"
+    },
+    {
+      "number": "9",
+      "name": "Advanced RF Field Tools, Live Waterfall & Diagnostic Bench",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
+  },
+  "updated_at": "2026-10-20T09:59:52.190Z"
+}

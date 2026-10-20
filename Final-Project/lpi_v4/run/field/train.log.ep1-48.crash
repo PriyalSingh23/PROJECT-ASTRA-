@@ -1,0 +1,124 @@
+/Users/sabhay/Downloads/PROJECT 13OCT/Final-Project/lpi_v4/lpi_core.py:392: UserWarning: The operator 'aten::_linalg_solve_ex.result' is not currently supported on the MPS backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:13.)
+  return torch.linalg.solve(Gm + lam * eye, eye)
+[cfg] {"n_bits": 128, "frame_len": 512, "pilot_len": 64, "z_dim": 64, "dither_eps": 0.1, "refine_gain": 0.2, "ch": 32, "fs": 245760.0, "center_freq": 2484000000.0, "snr_range": [-2.0, 12.0], "eval_snr": 5.0, "cfo_max": 150.0, "phase_noise": 0.05, "dc_offset": 0.02, "timing_refine": 2, "iq_amp_db": 0.5, "iq_phase_deg": 1.5, "timing_jitter": 0}
+[cfg] spreading gain 9.03 dB | frame 576 samples = 2.34 ms | 54613 bit/s | device mps
+[channel] field preset 'team': delays 0x1x3 samp | PDP 0/-6/-12 dB | K 6 dB | doppler +-15 Hz | timing +-0.5 samp +SFO 5 ppm/56 ms | adc 12 bit @ 12 dB headroom
+[adversary] co-trained detectors: psd, cnn (cnn refreshed every 10 epochs)
+[init] warm start from lpi_v4/run/lpi_v4.best.pt (epoch 16)
+[data] synthetic hard negatives merged: (20000, 2, 512)
+[cfg] wardens trained for epochs 1..36, frozen afterwards
+[ep    1] G 6.052 bce 0.30258 | D1 0.649 D2 0.619 | adv 50.4% | KS p 0.689 kurt 2.996 H 0.957 circ 0.008 | BER5 9.88e-02 link 0.00e+00 | EW 8/8 Sc 0.136 -> PASS
+  [adversary] psd 56.8% cnn 51.6%
+[ep    2] G 5.433 bce 0.27164 | D1 0.480 D2 0.312 | adv 55.1% | KS p 0.132 kurt 2.984 H 0.957 circ 0.009 | BER5 9.84e-02 link 3.05e-05 | EW 8/8 Sc 0.235 -> PASS
+  [adversary] psd 68.6% cnn 54.3%
+[ep    3] G 5.493 bce 0.27466 | D1 0.396 D2 0.103 | adv 61.2% | KS p 0.674 kurt 2.991 H 0.957 circ 0.011 | BER5 9.94e-02 link 6.10e-05 | EW 8/8 Sc 0.140 -> FAIL
+  [adversary] psd 70.9% cnn 56.7%
+[ep    4] G 5.285 bce 0.26427 | D1 0.348 D2 0.040 | adv 65.6% | KS p 0.257 kurt 2.984 H 0.956 circ 0.012 | BER5 9.99e-02 link 3.05e-05 | EW 8/8 Sc 0.207 -> FAIL
+  [adversary] psd 72.5% cnn 59.2%
+[ep    5] G 5.401 bce 0.27004 | D1 0.294 D2 0.020 | adv 72.4% | KS p 0.878 kurt 2.988 H 0.957 circ 0.010 | BER5 9.85e-02 link 3.05e-05 | EW 8/8 Sc 0.142 -> FAIL
+  [adversary] psd 74.9% cnn 61.2%
+[ep    6] G 6.043 bce 0.27226 | D1 0.334 D2 0.012 | adv 65.1% | KS p 0.401 kurt 2.981 H 0.957 circ 0.015 | BER5 9.16e-02 link 0.00e+00 | EW 8/8 Sc 0.170 -> FAIL
+  [adversary] psd 67.0% cnn 60.0%
+[ep    7] G 6.354 bce 0.26146 | D1 0.362 D2 0.008 | adv 63.9% | KS p 0.380 kurt 2.986 H 0.957 circ 0.035 | BER5 9.69e-02 link 1.22e-04 | EW 8/8 Sc 0.181 -> FAIL
+  [adversary] psd 65.1% cnn 62.6%
+[ep    8] G 7.048 bce 0.26804 | D1 0.354 D2 0.006 | adv 62.4% | KS p 0.627 kurt 2.990 H 0.956 circ 0.038 | BER5 9.60e-02 link 9.16e-05 | EW 8/8 Sc 0.153 -> FAIL
+  [adversary] psd 61.7% cnn 64.8%
+  [adversary] cnn re-initialised (cadence 10)
+[ep    9] G 7.224 bce 0.25501 | D1 0.390 D2 0.004 | adv 62.3% | KS p 0.030 kurt 2.975 H 0.956 circ 0.017 | BER5 8.59e-02 link 6.10e-05 | EW 7/8 Sc 0.269 -> FAIL
+  [adversary] psd 61.9% cnn 50.0%
+[ep   10] G 7.798 bce 0.25873 | D1 0.389 D2 0.003 | adv 64.3% | KS p 0.241 kurt 2.977 H 0.955 circ 0.044 | BER5 9.54e-02 link 1.22e-04 | EW 8/8 Sc 0.231 -> FAIL
+  [adversary] psd 61.3% cnn 51.9%
+[ep   11] G 8.128 bce 0.25103 | D1 0.388 D2 0.003 | adv 65.0% | KS p 0.150 kurt 2.980 H 0.955 circ 0.036 | BER5 9.10e-02 link 6.10e-05 | EW 8/8 Sc 0.249 -> FAIL
+  [adversary] psd 61.8% cnn 56.0%
+[ep   12] G 8.616 bce 0.25018 | D1 0.290 D2 0.002 | adv 73.3% | KS p 0.509 kurt 2.987 H 0.955 circ 0.011 | BER5 9.22e-02 link 9.16e-05 | EW 8/8 Sc 0.148 -> FAIL
+  [adversary] psd 62.4% cnn 59.6%
+[ep   13] G 9.237 bce 0.25747 | D1 0.300 D2 0.002 | adv 73.7% | KS p 0.138 kurt 2.981 H 0.955 circ 0.011 | BER5 8.58e-02 link 1.22e-04 | EW 8/8 Sc 0.240 -> FAIL
+  [adversary] psd 60.1% cnn 64.4%
+[ep   14] G 9.538 bce 0.24663 | D1 0.307 D2 0.001 | adv 65.7% | KS p 0.456 kurt 2.992 H 0.956 circ 0.004 | BER5 8.79e-02 link 1.53e-04 | EW 8/8 Sc 0.148 -> FAIL
+  [adversary] psd 54.4% cnn 64.5%
+[ep   15] G 9.846 bce 0.23996 | D1 0.374 D2 0.001 | adv 67.9% | KS p 0.458 kurt 2.998 H 0.956 circ 0.006 | BER5 7.99e-02 link 1.83e-04 | EW 8/8 Sc 0.148 -> FAIL
+  [adversary] psd 59.5% cnn 65.1%
+[ep   16] G 9.520 bce 0.22601 | D1 0.333 D2 0.001 | adv 67.2% | KS p 0.795 kurt 2.992 H 0.956 circ 0.016 | BER5 7.65e-02 link 2.44e-04 | EW 8/8 Sc 0.144 -> FAIL
+  [adversary] psd 54.9% cnn 65.9%
+[ep   17] G 9.513 bce 0.22999 | D1 0.334 D2 0.001 | adv 65.9% | KS p 0.507 kurt 2.984 H 0.956 circ 0.025 | BER5 8.12e-02 link 1.53e-04 | EW 8/8 Sc 0.150 -> FAIL
+  [adversary] psd 52.7% cnn 66.5%
+[ep   18] G 9.259 bce 0.21974 | D1 0.361 D2 0.001 | adv 65.4% | KS p 0.572 kurt 2.991 H 0.956 circ 0.012 | BER5 8.57e-02 link 1.22e-04 | EW 8/8 Sc 0.144 -> FAIL
+  [adversary] psd 53.7% cnn 66.4%
+  [adversary] cnn re-initialised (cadence 10)
+[ep   19] G 9.155 bce 0.21017 | D1 0.343 D2 0.001 | adv 70.9% | KS p 0.057 kurt 2.980 H 0.955 circ 0.018 | BER5 7.90e-02 link 1.53e-04 | EW 8/8 Sc 0.262 -> FAIL
+  [adversary] psd 60.2% cnn 50.0%
+[ep   20] G 9.119 bce 0.20851 | D1 0.326 D2 0.001 | adv 65.6% | KS p 0.211 kurt 2.981 H 0.956 circ 0.006 | BER5 7.15e-02 link 2.14e-04 | EW 8/8 Sc 0.217 -> FAIL
+  [adversary] psd 56.3% cnn 51.1%
+[ep   21] G 9.009 bce 0.20871 | D1 0.372 D2 0.001 | adv 63.6% | KS p 0.296 kurt 2.980 H 0.956 circ 0.025 | BER5 7.53e-02 link 3.05e-04 | EW 8/8 Sc 0.203 -> FAIL
+  [adversary] psd 56.3% cnn 53.1%
+[ep   22] G 9.207 bce 0.21743 | D1 0.356 D2 0.000 | adv 66.8% | KS p 0.208 kurt 2.983 H 0.955 circ 0.010 | BER5 7.31e-02 link 3.66e-04 | EW 8/8 Sc 0.220 -> FAIL
+  [adversary] psd 57.0% cnn 55.6%
+[ep   23] G 8.953 bce 0.20586 | D1 0.310 D2 0.000 | adv 67.3% | KS p 0.095 kurt 2.995 H 0.955 circ 0.044 | BER5 7.53e-02 link 1.53e-04 | EW 8/8 Sc 0.256 -> FAIL
+  [adversary] psd 55.6% cnn 58.8%
+  [D2] re-initialised (periodic adversary refreshment)
+  [adversary] psd re-initialised (cadence 25)
+[ep   24] G 8.888 bce 0.20198 | D1 0.367 D2 0.000 | adv 72.1% | KS p 0.155 kurt 2.985 H 0.955 circ 0.004 | BER5 6.91e-02 link 2.75e-04 | EW 8/8 Sc 0.231 -> FAIL
+  [adversary] psd 50.0% cnn 60.4%
+[ep   25] G 8.178 bce 0.18621 | D1 0.349 D2 0.673 | adv 65.3% | KS p 0.547 kurt 2.997 H 0.955 circ 0.015 | BER5 6.86e-02 link 2.14e-04 | EW 8/8 Sc 0.142 -> FAIL
+  [adversary] psd 51.9% cnn 61.2%
+[ep   26] G 8.629 bce 0.20572 | D1 0.346 D2 0.408 | adv 72.3% | KS p 0.400 kurt 2.986 H 0.955 circ 0.007 | BER5 7.58e-02 link 2.44e-04 | EW 8/8 Sc 0.169 -> FAIL
+  [adversary] psd 55.3% cnn 63.3%
+[ep   27] G 8.618 bce 0.19535 | D1 0.320 D2 0.123 | adv 66.4% | KS p 0.798 kurt 3.002 H 0.955 circ 0.019 | BER5 6.69e-02 link 1.53e-04 | EW 8/8 Sc 0.143 -> FAIL
+  [adversary] psd 54.7% cnn 64.3%
+[ep   28] G 8.796 bce 0.19868 | D1 0.332 D2 0.042 | adv 68.1% | KS p 0.090 kurt 3.001 H 0.956 circ 0.047 | BER5 7.09e-02 link 2.14e-04 | EW 8/8 Sc 0.255 -> FAIL
+  [adversary] psd 54.2% cnn 65.9%
+  [adversary] cnn re-initialised (cadence 10)
+[ep   29] G 8.652 bce 0.19112 | D1 0.334 D2 0.020 | adv 68.8% | KS p 0.816 kurt 2.984 H 0.955 circ 0.084 | BER5 6.34e-02 link 2.75e-04 | EW 8/8 Sc 0.178 -> FAIL
+  [adversary] psd 54.4% cnn 50.0%
+[ep   30] G 8.791 bce 0.20209 | D1 0.257 D2 0.012 | adv 74.1% | KS p 0.823 kurt 2.997 H 0.956 circ 0.033 | BER5 6.88e-02 link 1.83e-04 | EW 8/8 Sc 0.149 -> FAIL
+  [adversary] psd 52.3% cnn 51.9%
+[ep   31] G 8.652 bce 0.19424 | D1 0.288 D2 0.007 | adv 74.5% | KS p 0.927 kurt 2.993 H 0.956 circ 0.011 | BER5 6.65e-02 link 3.66e-04 | EW 8/8 Sc 0.141 -> FAIL
+  [adversary] psd 54.0% cnn 55.1%
+[ep   32] G 8.609 bce 0.19443 | D1 0.272 D2 0.005 | adv 75.9% | KS p 0.418 kurt 2.996 H 0.956 circ 0.005 | BER5 7.40e-02 link 2.14e-04 | EW 8/8 Sc 0.156 -> FAIL
+  [adversary] psd 52.9% cnn 57.6%
+[ep   33] G 8.941 bce 0.20836 | D1 0.327 D2 0.004 | adv 71.6% | KS p 0.510 kurt 2.999 H 0.956 circ 0.042 | BER5 7.16e-02 link 2.44e-04 | EW 8/8 Sc 0.152 -> FAIL
+  [adversary] psd 52.1% cnn 59.5%
+[ep   34] G 8.659 bce 0.19565 | D1 0.341 D2 0.003 | adv 67.9% | KS p 0.751 kurt 2.998 H 0.956 circ 0.022 | BER5 6.65e-02 link 2.14e-04 | EW 8/8 Sc 0.144 -> FAIL
+  [adversary] psd 50.9% cnn 60.0%
+[ep   35] G 8.546 bce 0.18818 | D1 0.367 D2 0.002 | adv 62.9% | KS p 0.303 kurt 2.991 H 0.956 circ 0.033 | BER5 6.98e-02 link 9.16e-05 | EW 8/8 Sc 0.201 -> FAIL
+  [adversary] psd 52.7% cnn 60.9%
+[ep   36] G 8.661 bce 0.19736 | D1 0.363 D2 0.002 | adv 66.4% | KS p 0.858 kurt 2.995 H 0.956 circ 0.012 | BER5 7.74e-02 link 2.14e-04 | EW 8/8 Sc 0.141 -> FAIL
+  [adversary] psd 52.6% cnn 59.7%
+[ep   37] G 8.166 bce 0.18044 | D1 0.361 D2 0.361 | adv 63.6% | KS p 0.792 kurt 2.993 H 0.956 circ 0.020 | BER5 7.68e-02 link 3.05e-04 | EW 8/8 Sc 0.143 -> FAIL
+  [adversary] psd 53.0% cnn 59.7%
+[ep   38] G 8.891 bce 0.21211 | D1 0.412 D2 0.412 | adv 65.0% | KS p 0.818 kurt 2.993 H 0.955 circ 0.036 | BER5 6.93e-02 link 2.75e-04 | EW 8/8 Sc 0.152 -> FAIL
+  [adversary] psd 55.5% cnn 59.6%
+  [adversary] cnn re-initialised (cadence 10)
+[ep   39] G 8.448 bce 0.19212 | D1 0.396 D2 0.396 | adv 60.5% | KS p 0.777 kurt 2.989 H 0.955 circ 0.009 | BER5 6.27e-02 link 9.16e-05 | EW 8/8 Sc 0.143 -> FAIL
+  [adversary] psd 54.7% cnn 50.0%
+[export] generator_lpi.pt + decoder_lpi.pt + lpi_config.json -> lpi_v4/run/field  (from lpi_v5.best.pt, epoch 39, sha256 45db6d9b3ba0)
+  [best] score 582.5 -> lpi_v4/run/field/lpi_v5.best.pt
+[ep   40] G 8.314 bce 0.18887 | D1 0.389 D2 0.389 | adv 66.3% | KS p 0.846 kurt 2.995 H 0.954 circ 0.042 | BER5 7.07e-02 link 4.27e-04 | EW 8/8 Sc 0.156 -> FAIL
+  [adversary] psd 54.6% cnn 50.0%
+[ep   41] G 8.515 bce 0.20106 | D1 0.380 D2 0.380 | adv 65.6% | KS p 0.888 kurt 2.993 H 0.955 circ 0.035 | BER5 6.50e-02 link 4.58e-04 | EW 8/8 Sc 0.152 -> FAIL
+  [adversary] psd 55.5% cnn 50.0%
+[ep   42] G 8.241 bce 0.18594 | D1 0.364 D2 0.364 | adv 63.8% | KS p 0.906 kurt 2.994 H 0.954 circ 0.054 | BER5 7.25e-02 link 3.66e-04 | EW 8/8 Sc 0.162 -> FAIL
+  [adversary] psd 56.9% cnn 50.0%
+[ep   43] G 8.205 bce 0.18937 | D1 0.435 D2 0.435 | adv 59.9% | KS p 0.022 kurt 2.988 H 0.955 circ 0.028 | BER5 6.28e-02 link 4.88e-04 | EW 7/8 Sc 0.271 -> FAIL
+  [adversary] psd 56.0% cnn 50.0%
+[ep   44] G 8.479 bce 0.19988 | D1 0.452 D2 0.452 | adv 63.8% | KS p 0.011 kurt 2.998 H 0.955 circ 0.071 | BER5 7.36e-02 link 2.14e-04 | EW 7/8 Sc 0.290 -> FAIL
+  [adversary] psd 58.9% cnn 50.0%
+[ep   45] G 8.332 bce 0.19002 | D1 0.396 D2 0.396 | adv 63.9% | KS p 0.202 kurt 2.997 H 0.955 circ 0.080 | BER5 7.50e-02 link 5.19e-04 | EW 8/8 Sc 0.246 -> FAIL
+  [adversary] psd 57.6% cnn 50.0%
+[ep   46] G 8.440 bce 0.19746 | D1 0.467 D2 0.467 | adv 56.9% | KS p 0.461 kurt 2.989 H 0.956 circ 0.057 | BER5 8.54e-02 link 3.66e-04 | EW 8/8 Sc 0.172 -> FAIL
+  [adversary] psd 57.4% cnn 50.0%
+[export] generator_lpi.pt + decoder_lpi.pt + lpi_config.json -> lpi_v4/run/field  (from lpi_v5.best.pt, epoch 46, sha256 4088bb6e68ca)
+  [best] score 587.5 -> lpi_v4/run/field/lpi_v5.best.pt
+[ep   47] G 8.249 bce 0.18850 | D1 0.453 D2 0.453 | adv 61.9% | KS p 0.913 kurt 3.002 H 0.955 circ 0.077 | BER5 7.51e-02 link 2.14e-04 | EW 8/8 Sc 0.171 -> FAIL
+  [adversary] psd 59.5% cnn 50.0%
+[ep   48] G 8.477 bce 0.19816 | D1 0.444 D2 0.444 | adv 63.8% | KS p 0.469 kurt 2.994 H 0.954 circ 0.082 | BER5 7.18e-02 link 1.83e-04 | EW 8/8 Sc 0.183 -> FAIL
+  [adversary] psd 59.1% cnn 50.0%
+Traceback (most recent call last):
+  File "/Users/sabhay/Downloads/PROJECT 13OCT/Final-Project/lpi_v4/lpi_train.py", line 647, in <module>
+    main()
+  File "/Users/sabhay/Downloads/PROJECT 13OCT/Final-Project/lpi_v4/lpi_train.py", line 405, in main
+    W2 = Warden(**W2._init_kwargs).to(device)
+                  ^^^^^^^^^^^^^^^
+  File "/Users/sabhay/radioconda/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'Warden' object has no attribute '_init_kwargs'
