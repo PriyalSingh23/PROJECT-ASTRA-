@@ -30,9 +30,6 @@ import {
   KeyringInfo,
   RotateKeysResponse,
   TamperTestResponse,
-  MeshNode,
-  MeshLink,
-  MeshActiveRoute,
   MeshTopologyData,
   MeshScenarioResponse,
 } from '../types'

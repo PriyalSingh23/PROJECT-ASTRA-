@@ -332,6 +332,16 @@ export const Header: React.FC<HeaderProps> = ({
             )
           )}
 
+          {/* Tactical Ad-Hoc Multi-Hop Mesh Status Pill (Phase 08) */}
+          <button
+            onClick={() => setActiveTab('topology')}
+            className="bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-mono text-[10px] font-bold px-2 py-1 rounded shadow-[0_0_12px_rgba(6,182,212,0.25)] flex items-center space-x-1 cursor-pointer transition-all hover:bg-cyan-900/60"
+            title="Multi-Hop Ad-Hoc Mesh Routing Protocol Active. Click to view 3D topology."
+          >
+            <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+            <span>[MESH: 5 NODES ACTIVE • MULTI-HOP]</span>
+          </button>
+
           {/* Persistent Local Outbox Counter Badge (D-06) */}
           {typeof localOutboxCount === 'number' && localOutboxCount > 0 && (
             <button

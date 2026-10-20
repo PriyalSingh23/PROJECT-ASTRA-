@@ -3,17 +3,14 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import {
-  Radio,
   Eye,
   Layers,
   Compass,
-  Zap,
-  RotateCcw,
   Sparkles,
 } from 'lucide-react'
 import { api } from '../../services/api'
 import { Endpoint, Message, QueueStats, RelayNode, MeshTopologyData } from '../../types'
-import { TopologyModel, TopoRelay, buildTopologyModel, computeUAVDrift, LINK_COLORS } from './model'
+import { TopologyModel, TopoRelay, buildTopologyModel, computeUAVDrift } from './model'
 import { TopologyFallback } from './TopologyFallback'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { MessageDrawer, DrawerStation } from '../MessageDrawer'

@@ -12,7 +12,6 @@ import {
   Compass,
   HardDrive,
   ShieldAlert,
-  ArrowRight,
 } from 'lucide-react'
 import { TopoRelay, TopoLink } from './model'
 import { api } from '../../services/api'

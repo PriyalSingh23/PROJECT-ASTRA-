@@ -510,6 +510,10 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                             <span>PQC SECURED</span>
                           </span>
                         )}
+                        <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-cyan-500/40 bg-cyan-950/30 text-cyan-300">
+                          <Radio className="w-2.5 h-2.5 text-cyan-400" />
+                          <span>MESH: MULTI-HOP</span>
+                        </span>
                         {(m.pqc_downgrade_warning || m.envelope_version === 2) && (
                           <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-amber-500/40 bg-amber-950/30 text-amber-300">
                             <AlertTriangle className="w-3 h-3 text-amber-400" />
@@ -570,6 +574,10 @@ export const StationConsoleColumn: React.FC<StationConsoleColumnProps> = ({
                           <span>PQC SECURED</span>
                         </span>
                       )}
+                      <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-cyan-500/40 bg-cyan-950/30 text-cyan-300">
+                        <Radio className="w-2.5 h-2.5 text-cyan-400" />
+                        <span>MESH: MULTI-HOP</span>
+                      </span>
                       {(m.pqc_downgrade_warning || m.envelope_version === 2) && (
                         <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-amber-500/40 bg-amber-950/30 text-amber-300">
                           <AlertTriangle className="w-3 h-3 text-amber-400" />
