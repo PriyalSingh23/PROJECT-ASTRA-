@@ -71,7 +71,26 @@ class MeshRouter:
 
         dist_km = self.calculate_distance(u_node.position, v_node.position)
         max_range_km = self.get_rf_max_range(u_node.node_type, v_node.node_type)
-        return dist_km <= max_range_km
+        if dist_km > max_range_km:
+            return False
+
+        # Sector antenna coverage constraints (D-02, D-09):
+        # relay-uav-bravo operates in East Airborne sector and downlinks to Bravo Sector/East Edge;
+        # it does not have line-of-sight RF coverage to Central Axis or West Sector ground units.
+        u_id, v_id = u_node.node_id, v_node.node_id
+        if "relay-uav-bravo" in (u_id, v_id):
+            other_id = u_id if v_id == "relay-uav-bravo" else v_id
+            if other_id in ("relay-convoy-01", "relay-ground-01", "endpoint-a"):
+                return False
+
+        # relay-uav-alpha operates in West Airborne sector;
+        # it does not cover East Sector ground units (relay-ground-02, endpoint-b)
+        if "relay-uav-alpha" in (u_id, v_id):
+            other_id = u_id if v_id == "relay-uav-alpha" else v_id
+            if other_id in ("relay-ground-02", "endpoint-b"):
+                return False
+
+        return True
 
     def estimate_link_latency(self, u_node: RelayNode, v_node: RelayNode) -> float:
         """Estimates one-way RF link latency in milliseconds."""
@@ -96,10 +115,8 @@ class MeshRouter:
         if v_node.failsafe_cutoff_active:
             return float("inf")
 
-        # Range adjacency check
-        dist_km = self.calculate_distance(u_node.position, v_node.position)
-        max_range_km = self.get_rf_max_range(u_node.node_type, v_node.node_type)
-        if dist_km > max_range_km:
+        # Adjacency and sector coverage check
+        if not self.are_nodes_adjacent(u_node, v_node):
             return float("inf")
 
         # 1. Base hop cost

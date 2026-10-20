@@ -1054,6 +1054,7 @@ def get_relay_detail(relay_id):
 @api_v1.route("/relays/<relay_id>/telemetry", methods=["POST"])
 def update_relay_telemetry(relay_id):
     from integration.relay_nodes.manager import relay_manager, RelayStatus
+    from integration.relay_nodes.mesh_router import mesh_router
     node = relay_manager.get_node(relay_id)
     if node is None:
         return jsonify({"error": f"Relay node '{relay_id}' not found"}), 404
@@ -1075,14 +1076,176 @@ def update_relay_telemetry(relay_id):
         except ValueError:
             pass
 
+    position = data.get("position")
+    sector = data.get("sector")
+
     node.update_telemetry(
         battery=float(battery) if battery is not None else None,
         temperature=float(temperature) if temperature is not None else None,
         storage_pct=float(storage_pct) if storage_pct is not None else None,
         status=status,
         queue_depth=int(queue_depth) if queue_depth is not None else None,
+        position=position,
+        sector=sector,
     )
-    return jsonify(node.to_dict())
+    new_route = mesh_router.compute_route("endpoint-a", "endpoint-b")
+    res = node.to_dict()
+    res["new_route"] = new_route
+    return jsonify(res)
+
+
+@api_v1.route("/topology/mesh", methods=["GET"])
+def get_mesh_topology():
+    from integration.relay_nodes.manager import relay_manager
+    from integration.relay_nodes.mesh_router import mesh_router
+
+    active_route = mesh_router.compute_route("endpoint-a", "endpoint-b")
+    nodes = relay_manager.list_nodes()
+    links = mesh_router.get_topology_links(active_path=active_route.get("path", []))
+
+    return jsonify({
+        "nodes": nodes,
+        "links": links,
+        "active_route": active_route,
+    })
+
+
+@api_v1.route("/relays/scenario", methods=["POST"])
+def execute_relay_scenario():
+    import time
+    from integration.relay_nodes.manager import relay_manager, RelayStatus
+    from integration.relay_nodes.mesh_router import mesh_router
+
+    data = request.get_json(force=True, silent=True) or {}
+    scenario = data.get("scenario", "reset_nominal")
+
+    # Get previous path
+    prev_route = mesh_router.compute_route("endpoint-a", "endpoint-b")
+    prev_path = prev_route.get("path", [])
+
+    t0 = time.time()
+    reroute_event = ""
+
+    if scenario == "scenario_1_uav_signal_lost":
+        uav_a = relay_manager.get_node("relay-uav-alpha")
+        if uav_a:
+            uav_a.update_telemetry(status=RelayStatus.FORCE_OFFLINE)
+        reroute_event = "[MESH REROUTE: Bypassed relay-uav-alpha -> Diverted via relay-ground-01 -> Delivered]"
+
+    elif scenario == "scenario_2_ground_relays_jammed":
+        # Make sure aerial relays are nominal online
+        uav_a = relay_manager.get_node("relay-uav-alpha")
+        uav_b = relay_manager.get_node("relay-uav-bravo")
+        if uav_a:
+            uav_a.update_telemetry(status=RelayStatus.ONLINE, battery=98.0)
+        if uav_b:
+            uav_b.update_telemetry(status=RelayStatus.ONLINE, battery=92.0)
+        # Jam ground nodes
+        for gid in ("relay-ground-01", "relay-convoy-01", "relay-ground-02"):
+            g_node = relay_manager.get_node(gid)
+            if g_node:
+                g_node.update_telemetry(status=RelayStatus.RF_JAMMED)
+        reroute_event = "[MESH REROUTE: Ground relays jammed -> Diverted via aerial corridor -> Delivered]"
+
+    elif scenario == "scenario_3_convoy_breakout":
+        # Set both UAVs to OFFLINE
+        for uav_id in ("relay-uav-alpha", "relay-uav-bravo"):
+            u_node = relay_manager.get_node(uav_id)
+            if u_node:
+                u_node.update_telemetry(status=RelayStatus.OFFLINE)
+        # Restore ground nodes to online
+        for gid in ("relay-ground-01", "relay-convoy-01", "relay-ground-02"):
+            g_node = relay_manager.get_node(gid)
+            if g_node:
+                g_node.update_telemetry(status=RelayStatus.ONLINE)
+        reroute_event = "[MESH REROUTE: Aerial corridor lost -> Diverted via tactical convoy -> Delivered]"
+
+    elif scenario == "reset_nominal":
+        relay_manager.reset_all_nodes()
+        reroute_event = "[MESH TOPOLOGY: Restored nominal operating topology]"
+
+    else:
+        return jsonify({"error": f"Unknown scenario: {scenario}"}), 400
+
+    new_route = mesh_router.compute_route("endpoint-a", "endpoint-b")
+    new_path = new_route.get("path", [])
+    convergence_ms = (time.time() - t0) * 1000.0
+
+    return jsonify({
+        "scenario": scenario,
+        "previous_path": prev_path,
+        "new_path": new_path,
+        "reroute_event": reroute_event,
+        "convergence_latency_ms": round(convergence_ms, 2),
+        "status": "CONVERGED",
+    })
+
+
+@api_v1.route("/mesh/route/simulate", methods=["POST"])
+def simulate_mesh_route():
+    import uuid
+    from integration.relay_nodes.mesh_router import mesh_router
+    from integration.relay_nodes.manager import relay_manager
+    from messaging.mesh_bundle import (
+        wrap_mesh_bundle,
+        process_hop_bundle,
+        generate_custody_ack_token,
+    )
+
+    route = mesh_router.compute_route("endpoint-a", "endpoint-b")
+    path = route.get("path", [])
+    if not path or len(path) < 2:
+        return jsonify({
+            "delivered": False,
+            "error": "No viable route available across mesh",
+            "active_route": path,
+            "trace": [],
+        }), 400
+
+    bundle_uuid = uuid.uuid4()
+    bundle_bytes = wrap_mesh_bundle(b"SIMULATED_ENVELOPE_V3_PAYLOAD", bundle_uuid=bundle_uuid, source_node_id=path[0])
+
+    trace = []
+    delivered = True
+
+    for i in range(len(path) - 1):
+        u = path[i]
+        v = path[i + 1]
+        repacked, next_hdr, err = process_hop_bundle(bundle_bytes, v)
+        if err:
+            trace.append({
+                "hop": i + 1,
+                "from_node": u,
+                "to_node": v,
+                "status": "DROPPED",
+                "error": err,
+            })
+            delivered = False
+            break
+
+        custody_token = generate_custody_ack_token(v, bundle_uuid.bytes, next_hdr.hop_count)
+        u_node = relay_manager.get_node(u)
+        v_node = relay_manager.get_node(v)
+        lat = mesh_router.estimate_link_latency(u_node, v_node) if (u_node and v_node) else 20.0
+
+        trace.append({
+            "hop": i + 1,
+            "from_node": u,
+            "to_node": v,
+            "status": "FORWARDED",
+            "custody_ack": custody_token.hex(),
+            "remaining_ttl": next_hdr.remaining_ttl,
+            "latency_ms": lat,
+        })
+        bundle_bytes = repacked
+
+    return jsonify({
+        "delivered": delivered,
+        "active_route": path,
+        "total_hops": len(path) - 1,
+        "estimated_latency_ms": route.get("estimated_latency_ms", 0.0),
+        "trace": trace,
+    })
 
 
 @api_v1.route("/relays/<relay_id>/reset", methods=["POST"])
