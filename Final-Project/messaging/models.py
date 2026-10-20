@@ -333,6 +333,12 @@ class UserSession(Base):
 class SecurityAuditLog(Base):
     __tablename__ = "security_audit_logs"
 
+    # Phase 8 Multi-Hop Mesh Audit Constants
+    BUNDLE_TTL_EXPIRED = "BUNDLE_TTL_EXPIRED"
+    ROUTING_LOOP_DETECTED = "ROUTING_LOOP_DETECTED"
+    CUSTODY_TRANSFER_FAILED = "CUSTODY_TRANSFER_FAILED"
+    MESH_REROUTE_DIVERTED = "MESH_REROUTE_DIVERTED"
+
     audit_id = Column(String(64), primary_key=True, default=generate_uuid)
     event_type = Column(String(64), nullable=False, index=True)  # LOGIN_SUCCESS, LOGIN_FAILED, ACCOUNT_LOCKED, LOGOUT, PERMISSION_DENIED
     user_id = Column(String(64), nullable=True, index=True)
