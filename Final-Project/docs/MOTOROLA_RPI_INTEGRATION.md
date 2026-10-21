@@ -6,11 +6,28 @@ reference for *how the bridge is built*; for the step-by-step field runbook
 (provisioning, wiring, two-terminal procedure, measured performance, the always-on
 listener) use **`docs/GROUND_COMMS_DEPLOYMENT.md`**.
 
-> **Scope, stated plainly.** This is the **narrowband message transport** layer: a
-> Motorola (or any) radio carrying SHADOWCOMM messages as an audio burst or MNIS
-> data. The **LPI-CGAN covert waveform** is a separate wideband layer that needs an
-> SDR and cannot fit a ~3 kHz voice channel — see
-> `docs/GROUND_COMMS_DEPLOYMENT.md` §"Two layers". The two are complementary.
+> **Scope, stated plainly.** This is the **Motorola transport** layer. It carries
+> SHADOWCOMM messages over a real radio — and, with `lpi_mode` enabled, it carries
+> them as **LPI bursts**: `integration/motorola/lpi_carrier.py` modulates the
+> covert protocol onto the radio's own audio channel, so the transmission itself
+> exhibits the LPI statistics (keyed spread + dither + a spread keyed pilot,
+> measured by the eight-domain EW battery). The wideband CGAN path in
+> `lpi_v4/tx_usrp.py` remains the SDR equivalent at 245 760 S/s —
+> see `docs/GROUND_COMMS_DEPLOYMENT.md` §"Two layers".
+>
+> **What the battery measures, honestly.** At the voice channel's 3 kHz width the
+> burst passes **six of the eight** EW domains raw (circularity, PAPR, SCF, C42,
+> kurtosis, KS). The remaining two — `entropy` and `wvd` — are monotonic in
+> occupied bandwidth and are unreachable *raw* by any waveform that fits a voice
+> channel: a band-limited noise floor of the same bandwidth fails them too.
+> `audio_ew_report` therefore returns a **shaper-matched `noise_floor_control`**
+> and a **`normalised` block** that re-expresses those two against the achievable
+> ceiling, with raw and normalised values always reported side by side.
+> Measured: entropy 0.945 of the closed-form ceiling (**PASS**), WVD 0.987 of the
+> shaper-matched floor — i.e. the burst is *below* its own noise floor
+> (**PASS**). Equivalently: **6/8 raw, 8/8 against the control.** The closed-form
+> ceilings are in the module docstring of `lpi_carrier.py`; no number is ever
+> faked to pass a threshold.
 
 > **Safety first.** Nothing here transmits until you set
 > `MOTOROLA_RADIO_APPROVED=true` **and** you hold a valid frequency/station
@@ -24,6 +41,7 @@ listener) use **`docs/GROUND_COMMS_DEPLOYMENT.md`**.
 
 | You want to… | Read |
 |---|---|
+| Understand **the whole system as one model** | **`docs/LPI_MOTOROLA_SYSTEM.md`** |
 | Provision a Pi 5 and run a live two-radio test | **`docs/GROUND_COMMS_DEPLOYMENT.md`** |
 | Understand the adapter/bridge contract and backends | this document |
 | Flip a running node between the simulated link and the radio | this document §"Switching the node live" |
@@ -79,19 +97,28 @@ auto-selecting it could transmit into the void and report success. See
 
 ## 2. Which backend should you use?
 
-| | `mnis_udp` | `soundcard` ★ | `gpio_ptt` |
-|---|---|---|---|
-| Works with | MOTOTRBO (DMR) with a data licence | **any** radio, analogue or digital | a radio with a serial data port |
-| Needs vendor software | Yes (MOTOTRBO Network Interface Service) | No | No |
-| Needs extra hardware | USB/IP link to radio, host running MNIS | USB sound card + 1 opto-isolator | opto-isolator + serial adaptor |
-| Reliability | High when MNIS is stable | Highest; radio is just a byte pipe | High; needs a wired data port |
-| Setup effort | Medium (CPS programming, radio IDs) | Low (a few wires) | Medium (serial + wiring) |
-| **Recommendation** | When you already run MOTOTRBO infrastructure | **Start here** for a field pilot | When the radio exposes a data port |
+| | `mnis_udp` | `soundcard` ★ | `gpio_ptt` | `sdr_usrp` |
+|---|---|---|---|---|
+| Works with | MOTOTRBO (DMR) with a data licence | **any** radio, analogue or digital | a radio with a serial data port | a USRP, radiated directly |
+| Needs vendor software | Yes (MOTOTRBO Network Interface Service) | No | No | No (UHD only) |
+| Needs extra hardware | USB/IP link to radio, host running MNIS | USB sound card + 1 opto-isolator | opto-isolator + serial adaptor | USRP + antenna |
+| Reliability | High when MNIS is stable | Highest; radio is just a byte pipe | High; needs a wired data port | Depends on RF link budget |
+| Setup effort | Medium (CPS programming, radio IDs) | Low (a few wires) | Medium (serial + wiring) | Low (UHD does the work) |
+| **Recommendation** | When you already run MOTOTRBO infrastructure | **Start here** for a field pilot | When the radio exposes a data port | Lab / SDR-only deployments |
 
 `auto` selects `soundcard`, and only `soundcard`. MNIS must be requested
 explicitly (`MOTOROLA_BACKEND=mnis_udp`) because it cannot be probed safely — see
 §1. `gpio_ptt` writes raw serial bytes and therefore needs a radio that already
 speaks a data protocol on its port.
+
+`sdr_usrp` is never chosen by `auto` either: radiating through a USRP is a
+licensing and power decision, so it is opt-in (`MOTOROLA_BACKEND=sdr_usrp`). It
+carries the **same** Motorola LPI burst — the same keyed spread codebook, dither,
+keyed ZC pilot and AES/RS/CRC stack — upconverted to RF as a single sideband
+(`integration/motorola/sdr_backend.py`). `48000 × 512/100 = 245760` exactly, so
+the audio grid maps onto UHD's preferred rate with no rate error; the measured
+IQ occupies 313–2991 Hz (2679 Hz wide) on one side of the LO. With
+`MOTOROLA_RADIO_APPROVED` unset the IQ is rendered and measured but not radiated.
 
 ---
 
@@ -240,6 +267,61 @@ PY
 
 ---
 
+## 6b. LPI mode — carrying the covert protocol through the radio
+
+By default the sound-card path uses the plain voice modem. Set
+`lpi_mode=True` (or `MOTOROLA_LPI_MODE=true`) to make the *same* radio link carry
+**LPI bursts** whose waveform and statistics are the covert ones:
+
+```python
+from integration.motorola.hardware_bridge import MotorolaHardwareBridge
+
+bridge = MotorolaHardwareBridge(backend="soundcard", lpi_mode=True)
+print(bridge.probe()["lpi_mode"])            # True
+
+# Dry-run (no RF) — the burst is built and its stealth measured:
+from integration.motorola.lpi_carrier import carrier_selftest
+res = carrier_selftest(seed=7)
+print(res["ew"]["signal"]["n_pass"], "/ 8 domains")
+print(res["ew"]["signal"]["pass"])
+```
+
+What changes and what does not:
+
+* **Changes:** the physical layer. `lpi_carrier.LpiCarrier` replaces the modem's
+  PSK burst with the keyed-spread + dither + spread-keyed-pilot LPI burst, so an
+  interceptor analysing the transmission's frequency and waveform sees noise.
+* **Does not change:** the framing and crypto. The same `FrameCodec` AES-128
+  (CTR) + RS(42,34) + CRC-8 stack, the same TMS PDU header, the same 280-byte
+  DMR ceiling, the same `MOTOROLA_RADIO_APPROVED` lockout.
+* **Cross-mode:** an LPI burst will not decode in a plain receiver, and vice
+  versa — the physical layers differ, exactly like two different session keys.
+
+Measured on this machine (software loopback, the exact Pi code path): burst
+decodes cleanly, air time 1.68 s, **120/120 decode success** across CFO 0–30 Hz,
+clock error 0/60 ppm, 6 varied message seeds and 6 varied channel seeds, with
+decode holding down to **−10 dB SNR** and the recovered carrier offset matching
+the injected offset to better than 0.001 Hz (0.099 Hz at 60 ppm) against a
+0.2 Hz budget. The EW battery scores **6/8 raw** and **8/8 against the matched
+control** — see the honest account of the two channel-limited domains at the top
+of this document.
+
+> An earlier version of this line read "45/45 across SNR 9–30 dB, CFO 0–30 Hz".
+> That sweep used a **fixed message seed** and was hiding a real link-killing
+> carrier-recovery bug: at 2 Hz offset the old receiver decoded at chance level
+> (BER 0.4375) with the pilot still locking at 10.0. The bug, its cause and its
+> fix are recorded in `docs/LPI_MOTOROLA_SYSTEM.md` §7b. The number above
+> replaces it and was measured across varied seeds, which is the only way to
+> count it.
+
+The burst occupies **exactly 300–3000 Hz** (1650 Hz carrier, 2000 Bd at beta
+0.35), so it fills the Motorola voice channel edge to edge with nothing for the
+radio's own filters to clip. The filtered and unfiltered EW views report
+identical statistics, which is the direct evidence that the channel does not
+alter the waveform.
+
+---
+
 ## 7. Verifying end to end
 
 ```bash
@@ -317,6 +399,34 @@ of failing with `PAYLOAD_TOO_LARGE`.
 - [ ] `ufw` allows only 5050 on the LAN: `sudo ufw allow from 192.168.0.0/16 to any port 5050`
 - [ ] Nightly DB backup: `sqlite3 shadowcomm_messaging.db ".backup /var/backups/shadowcomm-$(date +%F).db"`
 - [ ] Watchdog: `systemctl enable --now shadowcomm-node` (auto-restart on crash)
+
+---
+
+## 8b. Troubleshooting: a wedged `uhd_find_devices`
+
+Symptom: the hardware probe stalls, and `ps` shows `uhd_find_devices` in state
+`UE` or `D`, sometimes several copies, some hours old. Over-the-air work is
+unaffected; only the probe hangs.
+
+Cause: a half-enumerated USB device inside the UHD driver blocks in
+*uninterruptible kernel sleep*. Such a process **cannot be killed**, and
+`subprocess.run(timeout=...)` is not actually bounded for it — on timeout it
+kills the child and then waits for it to exit, which never happens.
+
+Both probe paths are now written not to wait: the child is abandoned after the
+deadline, and the result is cached so repeated probes do not spawn new ones
+(`integration/motorola/sdr_backend.py::find_devices`,
+`integration/workstation_service.py::probe_sdr_hardware`). If you still see
+stale copies:
+
+```bash
+pkill -9 uhd_find_devices          # clears anything killable
+ps -o pid,stat,command -ax | grep '[u]hd_find_devices'   # UE/D survive until reboot
+```
+
+A reboot is the only way to reap a `D`/`UE` process; it is harmless in the
+meantime because it consumes no CPU. Unplug and replug the USRP to clear the
+driver state.
 
 ---
 

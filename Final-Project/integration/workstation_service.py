@@ -82,21 +82,58 @@ class WorkstationService:
         except ImportError:
             pass
 
-        # Try uhd_find_devices executable
+        # Try uhd_find_devices executable.
+        #
+        # Why stdin=DEVNULL and kill-after: `uhd_find_devices` launches a helper
+        # and can block far longer than its own --help would suggest. Without a
+        # closed stdin it inherits the test runner's and, on a host with no USRP,
+        # the process tree can survive the 2 s timeout and keep the captured
+        # stdout pipe open -- which made `subprocess.run` wait forever and hung
+        # the whole test suite (observed: a `uhd_find_devices` child still alive
+        # 48 minutes into a run). Closing stdin and giving the kill a hard
+        # deadline makes this probe strictly bounded, which is what a hardware
+        # *probe* must be.
         cli_output = ""
         try:
-            res = subprocess.run(
+            # NOTE: ``subprocess.run(timeout=...)`` alone is NOT sufficient. On
+            # timeout it kills the child and then waits for it to exit; a child
+            # stuck in uninterruptible kernel sleep (a half-enumerated USB device
+            # inside the UHD driver, state D/UE) cannot be killed, so that wait
+            # never returns and the "bounded" probe hangs anyway. That is exactly
+            # how orphaned ``uhd_find_devices`` processes accumulated on this
+            # host. So the child is *abandoned* after the deadline rather than
+            # waited on, which is the only thing user space can guarantee.
+            import time
+
+            proc = subprocess.Popen(
                 ["uhd_find_devices"],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.DEVNULL,
                 text=True,
-                timeout=2.0
             )
-            cli_output = res.stdout + res.stderr
-            if "No UHD Devices Found" not in cli_output and "Device:" in cli_output:
-                for line in cli_output.splitlines():
-                    if "type:" in line or "product:" in line or "serial:" in line:
-                        devices.append(line.strip())
+            deadline = time.monotonic() + 2.0
+            while proc.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.05)
+            if proc.poll() is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                try:
+                    proc.wait(timeout=0.5)
+                except Exception:
+                    pass
+                cli_output = "(uhd_find_devices timed out)"
+            else:
+                out, err = proc.communicate()
+                cli_output = (out or "") + (err or "")
+                if "No UHD Devices Found" not in cli_output and "Device:" in cli_output:
+                    for line in cli_output.splitlines():
+                        if "type:" in line or "product:" in line or "serial:" in line:
+                            devices.append(line.strip())
         except Exception:
+            # A hardware probe never raises: it either sees a device or it does not.
             pass
 
         is_connected = len(devices) > 0

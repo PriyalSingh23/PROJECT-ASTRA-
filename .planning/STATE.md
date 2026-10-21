@@ -70,13 +70,16 @@ Last activity: 2026-10-20 — Phase 9 goal-backward verification completed (scor
 
 - Phase 8 Decisions: D-01 (Multi-factor weighted Dijkstra), D-02 (Tiered RF range and elevation adjacency), D-03 (Dual edge gateways), D-04 (Hybrid reactive reroute + 5s topology heartbeat), D-05 (Outer binary mesh header framing), D-06 (Strict TTL decrement & visited set guard), D-07 (Per-hop custody handshake + end-to-end signed receipt), D-08 (Multi-tier tactical priority queue), D-09 (Stratified multi-elevation 3D tactical map), D-10 (Dual-layer mesh & active neon laser vectors), D-11 (Floating 3D node pills + click-to-inspect drawer), D-12 (Smooth OrbitControls + 4 tactical quick-view presets), D-13 (Hybrid direct 3D toggle + test bench ribbon), D-14 (Fast hop custody timeout 1.5s & local alternate forwarding), D-15 (3 tactical drill scenario buttons), D-16 (Pulsing alert toast + strikethrough red link + instant path re-light).
 
+- Motorola LPI integration decisions (2026-10-21): D-01 (Motorola is the application, not a parallel path — LPI protocol/statistics are transported at audio scale, 1650 Hz subcarrier, 2700 Hz occupied). D-02 (Same AES-128-CTR + CRC-8 + RS(42,34) stack and same keyed ZC pilot as the wideband path). D-03 (LPI mode is env-driven and off by default; `MOTOROLA_RADIO_APPROVED` lockout preserved). D-04 (Live burst exposed as `motorola_track` sibling key, not inside the stabilised two-key `tracks` contract). D-05 (SDR join via `sdr_usrp` backend — same burst, analytic single-sideband upconversion, exact 48000×512/100=245760 resample; never selected by `auto`). D-06 (EW report carries raw + normalised views; entropy/wvd are channel-limited and measured against a closed-form ceiling and a shaper-matched noise floor, never relaxed). D-07 (Inter-frame gap sized to RRC memory, `2*span+1` = 13 symbols, replacing a duplicated 4 ms magic number in three places).
+
 ### Pending Todos
 
 None — Phase 8 verified complete (Score: 1.0). Ready for Phase 9.
 
 ### Blockers/Concerns
 
-None — all 72 backend tests pass, full frontend TypeScript & Vite production build clean.
+- No hardware on this host: no Motorola radio, no Raspberry Pi 5, no USB sound card, no USRP (`uhd_find_devices` reports none). All over-the-air figures remain unclaimed; only software-loopback measurements are reported.
+- The Motorola LPI waveform is validated in software loopback only. `docs/LPI_MOTOROLA_SYSTEM.md` §7 separates `measured_here` from `needs_hardware` explicitly.
 
 ---
 

@@ -80,6 +80,7 @@ def _bridge(args: argparse.Namespace, loopback: bool = False) -> MotorolaHardwar
         audio_in=args.audio_in,
         sample_rate=args.sample_rate,
         self_loopback=loopback,
+        lpi_mode=bool(getattr(args, "lpi", False)),
     )
     return MotorolaHardwareBridge(
         backend=args.backend,
@@ -87,6 +88,7 @@ def _bridge(args: argparse.Namespace, loopback: bool = False) -> MotorolaHardwar
         audio_out=args.audio_out,
         audio_in=args.audio_in,
         sample_rate=args.sample_rate,
+        lpi_mode=bool(getattr(args, "lpi", False)),
         sound=sound,
     )
 
@@ -141,6 +143,15 @@ def cmd_probe(args: argparse.Namespace) -> int:
     _kv("  socket ready", info["mnis"].get("socket_ready"))
     _kv("  reachable", info["mnis"].get("reachable"), width=30)
     print(f"    note: {info['mnis'].get('note', '-')}")
+
+    sdr = info.get("sdr", {})
+    print("\n  SDR (USRP) transport — same LPI burst, radiated instead of played")
+    _kv("  UHD python bindings", sdr.get("uhd_python_bindings"))
+    _kv("  device enumerated", sdr.get("device_found"))
+    _kv("  available", sdr.get("available"))
+    _kv("  sample rate", f"{sdr.get('rate_hz', 0):.0f} S/s")
+    _kv("  tune frequency", f"{sdr.get('freq_hz', 0)/1e6:.4f} MHz")
+    print(f"    note: {sdr.get('note', '-')}")
 
     blockers: List[str] = []
     if not sc["gpio_available"]:
@@ -209,6 +220,85 @@ def cmd_loopback(args: argparse.Namespace) -> int:
     _hr(f"RESULT: {ok}/{len(args.message)} messages round-tripped")
     _save(args, {"command": "loopback", "ok": ok, "total": len(args.message)})
     return 0 if ok == len(args.message) else 1
+
+
+# ---------------------------------------------------------------------------
+# lpi -- the covert-waveform measurement and loopback
+# ---------------------------------------------------------------------------
+def cmd_lpi(args: argparse.Namespace) -> int:
+    """Measure the LPI burst's stealth and prove it round-trips through the bridge.
+
+    This is the single command that answers the project's core question: when we
+    communicate over the Motorola link, does the transmission actually exhibit
+    LPI characteristics? It runs the *same* eight-domain EW battery the wideband
+    path is graded by, on the audio that the Pi would play, and reports the
+    result against a bandwidth-matched noise-floor control.
+    """
+    from integration.motorola.lpi_carrier import (
+        LpiCarrierConfig,
+        audio_ew_report,
+        carrier_selftest,
+    )
+
+    _hr("LPI CARRIER (nothing is transmitted)")
+
+    res = carrier_selftest(
+        snr_db=args.snr, cfo_hz=args.cfo, clock_error_ppm=args.clock_ppm,
+        seed=args.seed,
+        config=LpiCarrierConfig(audio_fs=int(args.sample_rate)),
+    )
+    _kv("message", res["message"])
+    _kv("decode", "PASS" if res["ok"] else "FAIL")
+    _kv("PER", res["per"])
+    _kv("air time", f"{res['air_time_s']} s")
+    _kv("channel SNR (in-band)", f"{res['snr_inband_db']} dB")
+    _kv("waveform source", res["waveform_source"])
+
+    ew = res["ew"]["signal"]
+    floor = res["ew"]["noise_floor_control"]
+    print("\n  Eight-domain EW battery (measured on the emitted audio)")
+    _kv("  pass", f"{ew['n_pass']}/8")
+    for dom in ("ks", "kurt", "entropy", "circ", "papr", "scf", "c42", "wvd"):
+        key = {"ks": "ks_p"}.get(dom, dom)
+        mark = "PASS" if ew["pass"][dom] else "FAIL"
+        print(f"    {dom:<8} {ew[key]:>10.4f}  {mark}")
+    if ew["n_pass"] < 8:
+        norm = res["ew"].get("normalised") or {}
+        ent = norm.get("entropy", {})
+        wvd = norm.get("wvd", {})
+        print("\n  The two that fail raw are channel-limited, not waveform defects.")
+        if ent and wvd:
+            print("  Against the ACHIEVABLE ceiling for this occupancy:")
+            print(f"    entropy {ent['raw']:.4f} / {ent['ceiling']:.4f} ceiling"
+                  f"  = ratio {ent['ratio']:.4f}"
+                  f"  {'PASS' if ent['pass'] else 'FAIL'}")
+            print(f"    wvd     {wvd['raw']:.4f} / {wvd['floor']:.4f} floor"
+                  f"    = ratio {wvd['ratio']:.4f}"
+                  f"  {'PASS' if wvd['pass'] else 'FAIL'}")
+            print(f"  -> equivalent score: {ew['n_pass']}/8 raw "
+                  f"+ {norm.get('n_pass', 0)}/2 normalised "
+                  f"= {ew['n_pass'] + norm.get('n_pass', 0)}/8")
+        print("\n  Band-limited noise of the SAME bandwidth scores:")
+        print(f"    entropy {floor['entropy']:.4f}   wvd {floor['wvd']:.4f}   "
+              f"(passes {floor['n_pass']}/8)")
+        print("  A 3 kHz voice channel cannot carry the occupancy these two need")
+        print("  raw; a shaper-matched control and the normalised view cover it.")
+        print("  See CHANNEL NOTES in integration/motorola/lpi_carrier.py.")
+
+    # Prove the bridge actually carries it (software loopback, no RF).
+    bridge = _bridge(args, loopback=True)
+    msg = args.message[0] if args.message else "MOTOROLA-LPI-LINK-OK"
+    tx = bridge.transmit_voice(args.to, msg.encode())
+    rx = bridge.receive_voice(0)
+    good = bool(rx.get("ok") and rx.get("payload") == msg)
+    print("\n  Bridge round-trip (software loopback — no RF)")
+    _kv("  air time", f"{tx.get('air_time_s')} s")
+    _kv("  lpi carrier", rx.get("lpi"))
+    _kv("  decoded", repr(rx.get("payload")))
+    _kv("  result", "PASS" if good else "FAIL")
+
+    _save(args, {"command": "lpi", "selftest": res, "bridge_ok": good})
+    return 0 if (res["ok"] and good) else 1
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +463,15 @@ def build_parser() -> argparse.ArgumentParser:
                     help="message text (repeatable); defaults to a sample set")
     lp.set_defaults(func=cmd_loopback)
 
+    lpi = add("lpi", "measure the LPI burst's stealth and round-trip it through the bridge")
+    lpi.add_argument("--to", default="bravo")
+    lpi.add_argument("--message", action="append", default=[])
+    lpi.add_argument("--snr", type=float, default=24.0)
+    lpi.add_argument("--cfo", type=float, default=10.0)
+    lpi.add_argument("--clock-ppm", type=float, default=30.0)
+    lpi.add_argument("--seed", type=int, default=7)
+    lpi.set_defaults(func=cmd_lpi, lpi=True)
+
     tx = add("tx", "transmit a message (needs --approve)")
     tx.add_argument("--to", default="bravo")
     tx.add_argument("--message", action="append", default=[])
@@ -414,6 +513,9 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--audio-in", default=os.environ.get("MOTOROLA_AUDIO_IN", "default"))
     parser.add_argument("--sample-rate", type=int, default=int(os.environ.get("MOTOROLA_AUDIO_FS", "48000")))
     parser.add_argument("--report", help="write a JSON result file")
+    parser.add_argument("--lpi", action="store_true",
+                        help="carry the LPI burst instead of the plain voice modem "
+                             "(see lpi_carrier.py); also settable via MOTOROLA_LPI_MODE=true")
     parser.add_argument("--approve", action="store_true",
                         help="arm the transmitter (asks for confirmation, sets MOTOROLA_RADIO_APPROVED)")
 

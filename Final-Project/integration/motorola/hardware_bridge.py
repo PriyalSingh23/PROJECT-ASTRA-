@@ -66,6 +66,16 @@ def _is_approved() -> bool:
     return os.environ.get("MOTOROLA_RADIO_APPROVED", "false").lower() in ("true", "1")
 
 
+def _lpi_env_default() -> bool:
+    """Whether the sound-card path should carry LPI bursts by default.
+
+    Off unless explicitly enabled, so the plain voice modem remains the default
+    and nothing about the existing field behaviour changes silently. Enable with
+    ``MOTOROLA_LPI_MODE=true`` (or pass ``lpi_mode=True``).
+    """
+    return os.environ.get("MOTOROLA_LPI_MODE", "false").lower() in ("true", "1")
+
+
 class LgpioShim:
     """``RPi.GPIO``-compatible shim over ``lgpio``, for Raspberry Pi 5.
 
@@ -368,6 +378,8 @@ class SoundCardBackend:
         ptt_tail_ms: int = DEFAULT_PTT_TAIL_MS,
         config: Optional[ModemConfig] = None,
         self_loopback: bool = False,
+        lpi_mode: bool = False,
+        lpi_config: Optional[Any] = None,
     ):
         self.gpio_pin = gpio_pin
         self.audio_out = audio_out
@@ -376,6 +388,20 @@ class SoundCardBackend:
         self.ptt_lead_ms = ptt_lead_ms
         self.ptt_tail_ms = ptt_tail_ms
         self.modem = VoiceModem(config or ModemConfig(audio_fs=sample_rate))
+        # LPI mode: transmit the *covert* carrier instead of the plain voice
+        # modem, so that the very same radio link carries a burst whose waveform
+        # and statistics are the LPI ones (see lpi_carrier.py). Both paths share
+        # the AES/RS/CRC stack and the key, so a receiver in LPI mode decodes an
+        # LPI burst and a receiver in plain mode decodes a plain burst -- they are
+        # deliberately not cross-compatible, exactly like two different session
+        # keys, because the physical layer differs.
+        self.lpi_mode = lpi_mode
+        self._lpi: Any = None
+        if lpi_mode:
+            from integration.motorola.lpi_carrier import LpiCarrier, LpiCarrierConfig
+
+            cfg = lpi_config or LpiCarrierConfig(audio_fs=int(sample_rate))
+            self._lpi = LpiCarrier(cfg)
         # Software loopback: play_audio() keeps the burst in memory and
         # receive() reads it back. This is NOT RF — it exists so the whole
         # transmit -> TMS -> demodulate -> parse chain can be proven green
@@ -550,15 +576,43 @@ class SoundCardBackend:
     def send(self, frame: bytes, dry_run: bool) -> BridgeResult:
         """Interface compatibility: modulate the framed bytes and transmit."""
         try:
-            audio = self.modem.modulate(frame)
+            if self._lpi is not None:
+                audio = self._lpi.modulate(frame, seed=self._lpi_seed(frame))
+            else:
+                audio = self.modem.modulate(frame)
         except Exception as e:  # noqa: BLE001
             return BridgeResult(False, self.name, dry_run, 0, f"Modulation failed: {e}",
                                 error_code="MODEM_ENCODE_ERROR")
-        res = self.play_audio(audio, dry_run, label="data burst")
+        res = self.play_audio(audio, dry_run, label="LPI burst" if self._lpi else "data burst")
         if res.success:
+            # ``bytes_on_wire`` must describe the DMR frame that goes over the air,
+            # not the audio buffer that carries it. ``play_audio`` reports the
+            # sample count in that slot because it has no frame to talk about;
+            # here we do, so correct it and keep the sample count alongside under
+            # its own name. (Measured before this fix: a 21-byte payload reported
+            # 159744 "bytes on wire", which was the audio sample count.)
+            res.bytes_on_wire = len(frame)
             res.meta["modulated_bytes"] = len(frame)
-            res.meta["air_time_s"] = round(self.modem.burst_seconds(len(frame)), 4)
+            res.meta["audio_samples"] = int(audio.size)
+            if self._lpi is not None:
+                res.meta["lpi"] = True
+                res.meta["air_time_s"] = round(
+                    self._lpi.burst_seconds(len(frame)), 4)
+            else:
+                res.meta["air_time_s"] = round(self.modem.burst_seconds(len(frame)), 4)
         return res
+
+    @staticmethod
+    def _lpi_seed(frame: bytes) -> int:
+        """Deterministic per-frame seed so a capture stays reproducible.
+
+        The seed only drives the masking dither; it is not a secret and is
+        derived from the payload so the same message always renders the same
+        burst, which is what the EW battery needs to be repeatable.
+        """
+        import hashlib
+
+        return int.from_bytes(hashlib.sha256(frame).digest()[:8], "big")
 
     def receive(self, duration_s: float, save_wav: Optional[str] = None) -> Tuple[Optional[bytes], Dict[str, Any]]:
         """Record from the radio's speaker and demodulate. Returns (payload, meta)."""
@@ -581,6 +635,19 @@ class SoundCardBackend:
             except Exception:  # noqa: BLE001 - a failed dump must not lose the decode
                 pass
 
+        if self._lpi is not None:
+            res = self._lpi.demodulate(audio)
+            return res.payload, {
+                "ok": res.ok,
+                "source": source,
+                "lpi": True,
+                "pilot_score": res.meta.get("pilot_score"),
+                "detail": res.detail,
+                "captured_seconds": round(audio.size / float(self.sample_rate), 4),
+                "levels": audio_levels(audio),
+                **res.meta,
+            }
+
         decoded = self.modem.demodulate(audio)
         return decoded.payload, {
             "ok": decoded.ok,
@@ -600,9 +667,14 @@ class MotorolaHardwareBridge:
     """Front door for physical Motorola dispatch.
 
     ``backend`` selects the transport: ``"mnis_udp"``, ``"gpio_ptt"``,
-    ``"soundcard"``, or ``"auto"``. ``auto`` resolves to the transparent
-    sound-card modem — never MNIS, because a UDP ``connect()`` cannot prove
-    MNIS is listening (see the module docstring).
+    ``"soundcard"``, ``"sdr_usrp"``, or ``"auto"``. ``auto`` resolves to the
+    transparent sound-card modem — never MNIS, because a UDP ``connect()`` cannot
+    prove MNIS is listening (see the module docstring).
+
+    ``sdr_usrp`` carries the **same** Motorola LPI burst over a USRP instead of
+    the radio's microphone input: one waveform, two transports. It is never
+    chosen by ``auto`` because radiated power and licensing are the operator's
+    decision, not a default.
     """
 
     def __init__(self, backend: str = "auto", **kwargs: Any):
@@ -621,20 +693,42 @@ class MotorolaHardwareBridge:
             audio_out=kwargs.get("audio_out", DEFAULT_AUDIO_OUT),
             audio_in=kwargs.get("audio_in", DEFAULT_AUDIO_IN),
             sample_rate=kwargs.get("sample_rate", DEFAULT_AUDIO_FS),
+            lpi_mode=bool(kwargs.get("lpi_mode", _lpi_env_default())),
+            lpi_config=kwargs.get("lpi_config"),
+            self_loopback=bool(kwargs.get("self_loopback", False)),
         )
+        self._sdr = kwargs.get("sdr")
 
     def approved(self) -> bool:
         return _is_approved()
 
     def select_backend(self) -> str:
-        if self._requested in ("mnis_udp", "gpio_ptt", "soundcard"):
+        if self._requested in ("mnis_udp", "gpio_ptt", "soundcard", "sdr_usrp"):
             return self._requested
         # "auto": the sound-card modem. A UDP connect() cannot tell us whether
         # MOTOTRBO Network Interface Service is actually listening, so choosing
         # it automatically risks transmitting into the void and reporting
         # success. The sound-card path always either works or fails loudly, so
         # it is the honest default. Force MNIS explicitly when you know it is up.
+        # SDR is excluded from auto for the same reason it is opt-in: radiating
+        # through a USRP is a licensing and power decision, not a fallback.
         return "soundcard"
+
+    def _sdr_backend(self):
+        """Build the SDR transport once, reusing the sound card's LPI carrier."""
+        if self._sdr is None:
+            from integration.motorola.sdr_backend import SdrBackend
+
+            self._sdr = SdrBackend(
+                addr=self._kwargs.get("sdr_addr", ""),
+                rate=float(self._kwargs.get("sdr_rate", 245_760.0)),
+                freq=float(self._kwargs.get("sdr_freq", 2.484e9)),
+                gain=float(self._kwargs.get("sdr_gain", 0.0)),
+                ant=self._kwargs.get("sdr_ant", ""),
+                lpi=self._sound._lpi,
+                seed_fn=SoundCardBackend._lpi_seed,
+            )
+        return self._sdr
 
     def _backend(self, name: Optional[str] = None) -> Any:
         name = name or self.select_backend()
@@ -642,6 +736,8 @@ class MotorolaHardwareBridge:
             return self._mnis
         if name == "gpio_ptt":
             return self._gpio
+        if name == "sdr_usrp":
+            return self._sdr_backend()
         return self._sound
 
     def probe(self) -> Dict[str, Any]:
@@ -652,6 +748,8 @@ class MotorolaHardwareBridge:
             "mnis": self._mnis.probe(),
             "gpio": self._gpio.probe(),
             "soundcard": self._sound.probe(),
+            "sdr": self._sdr_backend().probe(),
+            "lpi_mode": bool(getattr(self._sound, "lpi_mode", False)),
             "dmr_max_payload_bytes": DMR_MAX_PAYLOAD_BYTES,
         }
 
@@ -692,6 +790,9 @@ class MotorolaHardwareBridge:
             res.delivery_id = f"mot-voice-{os.urandom(4).hex()}"
             res.meta["transport"] = "soundcard_voice"
             res.meta["dmr_frame_bytes"] = len(frame)
+            # Same correction as ``send``: the frame is what goes on the air.
+            res.meta["audio_samples"] = int(res.bytes_on_wire)
+            res.bytes_on_wire = len(frame)
         return res.as_dict()
 
     def receive_voice(self, duration_s: float, save_wav: Optional[str] = None) -> Dict[str, Any]:

@@ -1458,11 +1458,63 @@ def get_waveform_comparison():
     same payload and the same real-sample budget, so the two columns of the
     Waveform Lab page are directly comparable. Track A is a live forward pass
     of the trained generator; Track B is RRC-shaped QPSK.
+
+    Additionally includes the **Motorola LPI burst** from the latest actual
+    message transmission, if available. This is the real-world measurement of
+    what the Motorola radio actually transmits.
+
+    The Motorola burst is returned as a *sibling* key ``motorola_track`` (plus
+    ``motorola_lpi_active`` / ``motorola_lpi_note``), NOT as a third entry in
+    ``tracks``. ``tracks`` is a stabilised two-key contract (``lpi`` and
+    ``conventional``) that the Waveform Lab UI and its type declaration both
+    require; injecting a third track there changes the shape of a public field
+    and silently breaks consumers that destructure it.
     """
     from integration.waveform_lab.service import waveform_lab_service
 
     n_frames = max(1, min(_safe_int(request.args.get("frames"), 4), 16))
-    return jsonify(waveform_lab_service.compare(n_frames=n_frames))
+    result = waveform_lab_service.compare(n_frames=n_frames)
+
+    # Expose the live Motorola LPI burst alongside (not inside) the two tracks.
+    try:
+        from integration.motorola.lpi_waveform_buffer import lpi_waveform_buffer
+        ew = lpi_waveform_buffer.ew_battery()
+        waveform = lpi_waveform_buffer.waveform_view(n_samples=256)
+        spectrum = lpi_waveform_buffer.spectrum_snapshot(fft_size=256)
+        burst = lpi_waveform_buffer.latest()
+
+        if burst is not None and ew is not None:
+            motorola_track = {
+                "id": "motorola_lpi",
+                "label": "Motorola LPI Carrier (live burst)",
+                "source": "integration/motorola/lpi_carrier.py — actual transmission",
+                "available": True,
+                "waveform": waveform.get("waveform", []) if waveform else [],
+                "constellation": waveform.get("constellation", []) if waveform else [],
+                "spectrum": [
+                    {"freq_khz": round(i * burst.sample_rate / 256.0 / 1000.0 - burst.sample_rate / 2000.0, 3),
+                     "power_db": v}
+                    for i, v in enumerate(spectrum.get("spectrum_db", []))
+                ] if spectrum else [],
+                "domains": ew.get("signal", {}).get("domains", []) if isinstance(ew.get("signal"), dict) else [],
+                "n_pass": ew.get("signal", {}).get("n_pass", 0) if isinstance(ew.get("signal"), dict) else 0,
+                "n_domains": 8,
+                "stealth_score": None,
+                "classification": "MOTOROLA_LPI_LIVE",
+                "burst_timestamp": burst.timestamp,
+                "message_id": burst.message_id,
+            }
+            result["motorola_track"] = motorola_track
+            result["motorola_lpi_active"] = True
+        else:
+            result["motorola_track"] = None
+            result["motorola_lpi_active"] = False
+            result["motorola_lpi_note"] = "Send a message to capture a live Motorola LPI burst"
+    except Exception:
+        result["motorola_track"] = None
+        result["motorola_lpi_active"] = False
+
+    return jsonify(result)
 
 
 @api_v1.route("/research/eval/run", methods=["POST"])
@@ -1664,8 +1716,26 @@ def compute_rf_link_budget():
 
 @api_v1.route("/stream/spectrum", methods=["GET"])
 def get_spectrum_stream_snapshot():
+    """Live spectrum snapshot — shows REAL Motorola LPI burst PSD when available.
+
+    When a message has been sent through the Motorola LPI carrier, this
+    endpoint returns the actual FFT/PSD of the latest burst audio. When no
+    burst has been captured yet, it falls back to a synthetic noise floor so
+    the UI still renders.
+    """
     import numpy as np
     import time
+
+    # Try to get real Motorola LPI burst spectrum first
+    try:
+        from integration.motorola.lpi_waveform_buffer import lpi_waveform_buffer
+        snapshot = lpi_waveform_buffer.spectrum_snapshot(fft_size=256)
+        if snapshot is not None:
+            return jsonify(snapshot)
+    except Exception:
+        pass
+
+    # Fallback: synthetic noise floor (no burst captured yet)
     fft_size = 256
     noise = np.random.normal(loc=-105.0, scale=3.5, size=fft_size)
     center = fft_size // 2
@@ -1676,6 +1746,33 @@ def get_spectrum_stream_snapshot():
         "center_freq_mhz": 433.0,
         "spectrum_db": [round(val, 2) for val in spectrum_db],
         "timestamp": time.time(),
+        "source": "synthetic_noise_floor",
+        "note": "No Motorola LPI burst captured yet — send a message to see real LPI spectrum",
     })
+
+
+@api_v1.route("/stream/lpi-status", methods=["GET"])
+def get_lpi_status():
+    """Live status of the Motorola LPI carrier pipeline.
+
+    Returns the waveform buffer status and the latest EW battery results.
+    """
+    try:
+        from integration.motorola.lpi_waveform_buffer import lpi_waveform_buffer
+        status = lpi_waveform_buffer.status()
+        ew = lpi_waveform_buffer.ew_battery()
+        waveform = lpi_waveform_buffer.waveform_view(n_samples=128)
+        return jsonify({
+            "lpi_pipeline_active": True,
+            "buffer": status,
+            "ew_battery": ew,
+            "waveform_preview": waveform,
+        })
+    except Exception as e:
+        return jsonify({
+            "lpi_pipeline_active": False,
+            "error": str(e),
+        })
+
 
 
