@@ -129,6 +129,17 @@ occupied band **313–2991 Hz (2679 Hz wide)**, all on the positive side of the
 LO. So the RF carriage preserves the burst's bandwidth and single-sideband
 character; it is the same signal an interceptor would analyse on the radio path.
 
+The receive side is validated too, not just asserted. `SdrBackend.decode_capture`
+takes a complex capture, inverts the upconversion (`iq_to_audio`, which is the
+exact inverse of `audio_to_iq`) and demodulates. Measured over three messages:
+**3/3 decoded** through the whole chain `audio → 245.76 kS/s analytic IQ →
+48 kHz audio → payload`, with a zero-capture control correctly returning
+`ok=False, payload=None`. Splitting that step out of `receive()` is what makes it
+testable without a radio — and it caught a real defect: the RX path used to call
+`self._lpi.receive(...)` behind a `hasattr` guard, but `LpiCarrier` only exposes
+`demodulate`, so every SDR capture silently returned nothing. That dead path is
+now covered by `test_sdr_round_trip_decodes_through_complex_iq`.
+
 `auto` never selects `sdr_usrp`. Radiating through a USRP is a licensing and
 power decision, so it must be requested explicitly:
 `MOTOROLA_BACKEND=sdr_usrp`. With `MOTOROLA_RADIO_APPROVED` unset the IQ is
@@ -215,6 +226,8 @@ This is handled honestly, in two ways, never by faking:
 | EW domains passing (normalised) | **2/2** (entropy ratio 0.945, wvd ratio 0.987) |
 | KS statistic vs. its critical value | `D ≈ 0.0031` measured vs `D_crit = 0.0034` at n≈160k; pure-Gaussian control `D ≈ 0.0017` |
 | KS pass rate over 24 realisations | **20/24 (83 %)** (perfect Gaussian: 95 % by construction — see §7c) |
+| SDR IQ conversion | 313–2991 Hz occupied (2679 Hz), single sideband, exact 48000×512/100 = 245760 |
+| SDR RX round-trip | **3/3 decoded** through `audio → IQ → audio → payload`; noise capture correctly rejected |
 | Occupied band | 300–3000 Hz, inside the voice channel with no clipping |
 
 ### Requires hardware — no number is claimed for these

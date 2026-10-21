@@ -129,6 +129,22 @@ def find_devices(timeout: float = 2.5, use_cache: bool = True) -> str:
 _DEVICE_CACHE: Optional[str] = None
 
 
+def _sdr_ratio(rate: float) -> tuple[int, int]:
+    """Return the exact ``(up, down)`` polyphase ratio for 48 kHz -> ``rate``.
+
+    At the default rate this is ``(512, 100)`` because ``48000 * 512/100 =
+    245760`` exactly. Any other rate falls back to the nearest rational
+    approximation with a bounded denominator, so the achieved rate is always
+    reported rather than silently assumed.
+    """
+    if abs(rate - DEFAULT_SDR_RATE) < 1e-6:
+        return RESAMPLE_UP, RESAMPLE_DOWN
+    from fractions import Fraction
+
+    frac = Fraction(rate / AUDIO_FS).limit_denominator(2000)
+    return frac.numerator, frac.denominator
+
+
 def audio_to_iq(audio: np.ndarray, rate: float = DEFAULT_SDR_RATE) -> np.ndarray:
     """Real 48 kHz LPI audio -> complex baseband at ``rate``.
 
@@ -148,20 +164,32 @@ def audio_to_iq(audio: np.ndarray, rate: float = DEFAULT_SDR_RATE) -> np.ndarray
     from scipy.signal import hilbert
 
     z = hilbert(x)
-
-    # Exact integer polyphase ratio only when rate is 245760; otherwise fall
-    # back to the nearest rational approximation and report the achieved rate.
-    if abs(rate - DEFAULT_SDR_RATE) < 1e-6:
-        up, down = RESAMPLE_UP, RESAMPLE_DOWN
-    else:
-        from fractions import Fraction
-
-        frac = Fraction(rate / AUDIO_FS).limit_denominator(2000)
-        up, down = frac.numerator, frac.denominator
-
+    up, down = _sdr_ratio(rate)
     iq = resample_poly(z, up, down)
     peak = float(np.max(np.abs(iq))) + 1e-12
     return (iq / peak).astype(np.complex64)
+
+
+def iq_to_audio(iq: np.ndarray, rate: float = DEFAULT_SDR_RATE,
+                target_peak: float = 0.9) -> np.ndarray:
+    """Complex baseband at ``rate`` -> real 48 kHz audio.
+
+    The exact inverse of :func:`audio_to_iq`. The radiated signal is the
+    analytic signal ``z = x + j*H{x}``, so ``Re{z}`` recovers ``x``; the polyphase
+    ratio is then inverted to return to the 48 kHz grid. This is the function
+    the hardware RX path uses, and it is also what makes the SDR transport
+    testable with no radio attached.
+    """
+    from scipy.signal import resample_poly
+
+    z = np.asarray(iq).reshape(-1)
+    if z.size == 0:
+        return np.zeros(0, dtype=np.float64)
+
+    up, down = _sdr_ratio(rate)
+    audio = resample_poly(np.real(z), down, up)
+    peak = float(np.max(np.abs(audio))) + 1e-12
+    return (audio / peak * target_peak).astype(np.float64)
 
 
 class SdrBackend:
@@ -294,16 +322,29 @@ class SdrBackend:
                    gain=self.gain, ant=self.ant, direction="rx") as radio:
             iq = radio.recv(int(duration_s * self.rate))
 
-        # Bring the complex capture back to real audio at 48 kHz. Taking the
-        # real part of a single-sideband signal is the inverse of the transmit
-        # upconversion: it folds the negative-frequency image back on top.
-        from scipy.signal import resample_poly
+        return self.decode_capture(iq, save_wav=save_wav)
 
-        audio = resample_poly(np.real(iq), RESAMPLE_DOWN, RESAMPLE_UP)
-        audio = audio / (np.max(np.abs(audio)) + 1e-12) * 0.9
+    def decode_capture(self, iq: np.ndarray,
+                       save_wav: Optional[str] = None):
+        """Complex USRP capture -> ``(payload, meta)``.
 
-        payload, meta = self._lpi.receive(audio, duration_s=duration_s) \
-            if hasattr(self._lpi, "receive") else (None, {"ok": False})
+        Deliberately separate from :meth:`receive` so the entire RX chain can be
+        exercised against a recorded or simulated capture with no radio attached.
+        That is what turns "the SDR path exists" into "the SDR path is tested".
+
+        The conversion inverts the transmit step: what was radiated is the
+        analytic signal ``z = x + j*H{x}``, so ``Re{z}`` recovers the original
+        real burst, and the polyphase ratio then returns it to 48 kHz.
+        """
+        audio = iq_to_audio(iq, self.rate)
+
+        meta: Dict[str, Any] = {
+            "source": "sdr_usrp",
+            "rate_hz": self.rate,
+            "freq_hz": self.freq,
+            "audio_samples": int(audio.size),
+            "iq_samples": int(np.asarray(iq).size),
+        }
 
         if save_wav:
             try:
@@ -314,6 +355,22 @@ class SdrBackend:
             except Exception as e:  # noqa: BLE001
                 meta["wav_error"] = str(e)
 
-        meta.update({"source": "sdr_usrp", "rate_hz": self.rate,
-                     "freq_hz": self.freq})
-        return payload, meta
+        if self._lpi is None:
+            meta["ok"] = False
+            meta["note"] = "no LPI carrier configured; captured audio not decoded"
+            return None, meta
+
+        # ``LpiCarrier`` exposes ``demodulate``; there is no ``receive`` method.
+        # (The previous version probed for ``receive`` and therefore always fell
+        # through to ``(None, {"ok": False})`` -- a dead RX path that looked
+        # plausible in the probe output and never decoded anything.)
+        rx = self._lpi.demodulate(audio)
+        meta["ok"] = bool(rx.ok)
+        meta["detail"] = rx.detail
+        # Keep the receiver's own diagnostics (CFO estimate, pilot score,
+        # per-frame CRC states) so a failed capture can be diagnosed rather
+        # than guessed at.
+        for k, v in (rx.meta or {}).items():
+            if k != "_rank":
+                meta[k] = v
+        return (rx.payload if rx.ok else None), meta

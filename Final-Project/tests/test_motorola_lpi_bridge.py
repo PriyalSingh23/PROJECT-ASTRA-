@@ -186,3 +186,62 @@ def test_sdr_is_not_the_automatic_backend():
 
     forced = MotorolaHardwareBridge(backend="sdr_usrp", lpi_mode=True)
     assert forced.select_backend() == "sdr_usrp"
+
+
+def test_sdr_round_trip_decodes_through_complex_iq():
+    """The full SDR chain must close in software: audio -> IQ -> audio -> payload.
+
+    This is the test that would have caught the dead RX path. ``SdrBackend``
+    used to call ``self._lpi.receive(...)`` behind a ``hasattr`` guard, but
+    ``LpiCarrier`` only exposes ``demodulate``. The guard therefore always
+    failed and every SDR capture returned ``(None, {"ok": False})`` -- a
+    receive path that could never decode anything while still looking healthy
+    in the probe output.
+    """
+    from integration.motorola.lpi_carrier import LpiCarrier, LpiCarrierConfig
+    from integration.motorola.sdr_backend import (
+        DEFAULT_SDR_RATE,
+        SdrBackend,
+        audio_to_iq,
+    )
+
+    carrier = LpiCarrier(LpiCarrierConfig())
+    backend = SdrBackend(lpi=carrier, seed_fn=lambda f: 11)
+
+    message = b"SDR-ROUNDTRIP-OK"
+    audio = carrier.modulate(message, seed=11)
+    iq = audio_to_iq(audio, DEFAULT_SDR_RATE)
+    assert np.iscomplexobj(iq) and iq.size > audio.size
+
+    payload, meta = backend.decode_capture(iq)
+    assert meta["ok"], meta
+    assert payload == message
+    assert meta["iq_samples"] == iq.size
+    # The RX chain runs on the 48 kHz grid, so the audio length must be restored
+    # to within a sample of the transmitted burst (resample_poly rounds up).
+    assert abs(meta["audio_samples"] - audio.size) <= 2
+
+
+def test_sdr_decode_capture_never_invents_a_payload():
+    """A capture with no burst in it must fail, not return garbage."""
+    from integration.motorola.lpi_carrier import LpiCarrier, LpiCarrierConfig
+    from integration.motorola.sdr_backend import SdrBackend
+
+    carrier = LpiCarrier(LpiCarrierConfig())
+    backend = SdrBackend(lpi=carrier)
+
+    payload, meta = backend.decode_capture(
+        np.zeros(400_000, dtype=np.complex64))
+    assert payload is None
+    assert meta["ok"] is False
+
+
+def test_sdr_decode_capture_without_a_carrier_says_so():
+    """No configured LPI carrier must be reported plainly, not silently."""
+    from integration.motorola.sdr_backend import SdrBackend
+
+    backend = SdrBackend(lpi=None)
+    payload, meta = backend.decode_capture(np.zeros(1000, dtype=np.complex64))
+    assert payload is None
+    assert meta["ok"] is False
+    assert "no LPI carrier" in meta["note"]
