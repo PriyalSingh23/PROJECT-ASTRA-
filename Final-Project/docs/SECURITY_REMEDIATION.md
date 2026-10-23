@@ -23,7 +23,7 @@ This report documents the security audit conducted on the legacy and messaging s
 | **SEC-02** | Hardcoded Flask session secret (`shadowcomm-secret-key`) | `app.py`, `messaging/server.py`, `messaging/ack_manager.py` | **MEDIUM** | Production-mode fail-closed guard added in the security branch; local-development fallback remains explicit and warns. Pending CI until the branch passes. |
 | **SEC-03** | Permissive Wildcard CORS (`cors_allowed_origins="*"`) | `app.py:16` | **MEDIUM** | **REMEDIATED**; restricted to explicit origin list from `SHADOWCOMM_CORS_ORIGINS`. |
 | **SEC-04** | Static zero-counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py`, legacy tests | **HIGH** | Fixed-counter design remains unsafe; the standalone prototype is blocked when `SHADOWCOMM_ENV=production`, but its crypto is not repaired. |
-| **SEC-05** | Unauthenticated API Message Ingestion | `messaging/api.py:48` | **HIGH** | **REMEDIATED**; added `verify_auth` endpoint and `X-Endpoint-Token` validation. |
+| **SEC-05** | Unauthenticated API message ingestion | `messaging/api.py` | **HIGH** | Production mode now forces sender-token validation even when the legacy opt-in flag is absent; development retains the opt-in behavior. Automated regression test added. |
 | **SEC-06** | Plaintext payload logging / event leakage | `messaging/models.py:185` | **LOW** | **REMEDIATED**; `to_dict()` sanitizes audit metadata. |
 | **SEC-07** | Predictable seeded endpoint tokens and default account passwords | `messaging/db.py`, `messaging/auth_service.py` | **HIGH** | Production startup guard added on the security branch; missing/weak credentials, mismatched stored tokens, or documented demo passwords block startup. Pending CI. |
 
@@ -62,6 +62,7 @@ The current implementation centralizes secret resolution in `messaging/security_
 
 When production mode is enabled:
 - `SHADOWCOMM_SECRET_KEY` must be a unique, non-placeholder value of at least 32 characters. Flask session signing and acknowledgement-receipt HMAC use the same validated value.
+- Message-ingestion routes require the sender endpoint token whenever production mode is active—even if the older `SHADOWCOMM_REQUIRE_AUTH` opt-in flag is missing or set to false. In development, the legacy opt-in setting still controls the previous behavior.
 - `SHADOWCOMM_TOKEN_ENDPOINT_A` and `SHADOWCOMM_TOKEN_ENDPOINT_B` must be unique, non-placeholder values of at least 32 characters.
 - A new database requires `SHADOWCOMM_ADMIN_PASSWORD` and `SHADOWCOMM_OPERATOR_PASSWORD`, each at least 16 characters; existing admin/operator/viewer accounts with documented demo defaults block startup.
 - If an existing database's stored endpoint token differs from the configured production token, startup fails and requires explicit credential rotation. The application does not silently rotate a stored credential.
