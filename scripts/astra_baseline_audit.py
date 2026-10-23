@@ -224,18 +224,20 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
             for line_number, line in enumerate(content.splitlines(), start=1):
                 if token in line.replace(chr(92), "/"):
                     if len(matches) < max_matches:
-                        kind = (
-                                                    "documentation" if path.suffix.lower() in {".md", ".txt"}
-                                                    else "test_fixture" if rel.startswith("tests/") or "/tests/" in rel
-                                                    else "ci_config" if rel.startswith(".github/workflows/")
-                                                    else "code_or_config"
-                                                )
-                                                matches.append({
-                                                    "path": rel,
-                                                    "line": line_number,
-                                                    "kind": kind,
-                                                    "text": line.strip()[:300],
-                                                })
+                        if path.suffix.lower() in {".md", ".txt"}:
+                            kind = "documentation"
+                        elif rel.startswith("tests/") or "/tests/" in rel:
+                            kind = "test_fixture"
+                        elif rel.startswith(".github/workflows/"):
+                            kind = "ci_config"
+                        else:
+                            kind = "code_or_config"
+                        matches.append({
+                            "path": rel,
+                            "line": line_number,
+                            "kind": kind,
+                            "text": line.strip()[:300],
+                        })
 
     return {
         "token": token,
