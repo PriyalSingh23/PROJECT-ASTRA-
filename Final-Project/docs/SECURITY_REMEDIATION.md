@@ -56,26 +56,19 @@ $ git log -S "shadowcomm-secret-key" --oneline
 
 ## 4. Remediation Actions Implemented
 
-### 4.1. Validated Environment Configuration
-In [`app.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/app.py#L14-L35):
-```python
-_env_secret = os.environ.get("SHADOWCOMM_SECRET_KEY")
-if not _env_secret:
-    print("[SECURITY WARNING] 'SHADOWCOMM_SECRET_KEY' environment variable not set. Using dev fallback.")
-    _env_secret = "dev-insecure-shadowcomm-secret-key"
+### 4.1. Runtime secret configuration and production mode
 
-_env_cors = os.environ.get("SHADOWCOMM_CORS_ORIGINS", "http://127.0.0.1:5000,http://localhost:5000,http://127.0.0.1:5050,http://localhost:5050")
-_cors_origins = [o.strip() for o in _env_cors.split(",") if o.strip()]
+The current implementation centralizes secret resolution in `messaging/security_config.py`. **Set `SHADOWCOMM_ENV=production` explicitly** on production deployment. The default remains `development` so local demo/test behavior is backward compatible; the production guard is not activated merely by omitting the variable.
 
-_env_aes_key = os.environ.get("SHADOWCOMM_AES_KEY")
-if not _env_aes_key or _env_aes_key == "0123456789abcdef":
-    print("[SECURITY WARNING] Insecure or default AES key in use. Rotate SHADOWCOMM_AES_KEY before production/pilot.")
-    _env_aes_key = "0123456789abcdef"
+When production mode is enabled:
+- `SHADOWCOMM_SECRET_KEY` must be a unique, non-placeholder value of at least 32 characters. Flask session signing and acknowledgement-receipt HMAC use the same validated value.
+- `SHADOWCOMM_TOKEN_ENDPOINT_A` and `SHADOWCOMM_TOKEN_ENDPOINT_B` must be unique, non-placeholder values of at least 32 characters.
+- A new database requires `SHADOWCOMM_ADMIN_PASSWORD` and `SHADOWCOMM_OPERATOR_PASSWORD`, each at least 16 characters; existing admin/operator/viewer accounts with documented demo defaults block startup.
+- If an existing database's stored endpoint token differs from the configured production token, startup fails and requires explicit credential rotation. The application does not silently rotate a stored credential.
+- Flask session cookies are set Secure, HttpOnly and SameSite=Lax in production mode.
+- The standalone `Final-Project/app.py` research prototype is blocked in production because its legacy AES-CTR implementation starts each encryption at the same counter. This prevents that component from being selected in production; it **does not repair the AES-CTR cryptographic design**.
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = _env_secret
-socketio = SocketIO(app, cors_allowed_origins=_cors_origins)
-```
+The guard checks minimum lengths, known demo values and obvious placeholders. It cannot estimate secret entropy or replace a threat-model/security review. Generate fresh secrets from a cryptographically secure random source, protect them from logs/version control, use authenticated transport, and rotate any historically exposed credentials. Do not reuse the demonstration tokens/passwords below for any field deployment.
 
 ### 4.2. Independent Device Authentication (`X-Endpoint-Token`)
 In [`messaging/models.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/messaging/models.py#L28-L48) and [`messaging/api.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/messaging/api.py#L47-L95):
@@ -125,13 +118,14 @@ Before conducting the two-device local network pilot:
 - [ ] Export environment variables:
   ```bash
   export SHADOWCOMM_ENV=production
+  export SHADOWCOMM_ENV=production
   export SHADOWCOMM_REQUIRE_AUTH=true
   export SHADOWCOMM_SECRET_KEY="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
   export SHADOWCOMM_TOKEN_ENDPOINT_A="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
   export SHADOWCOMM_TOKEN_ENDPOINT_B="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
   export SHADOWCOMM_ADMIN_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
   export SHADOWCOMM_OPERATOR_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
-  # If reusing an existing database, rotate its endpoint tokens and demo passwords first.
+  # Existing DBs require explicit endpoint-token/password rotation before production startup.
   ```
 - [ ] Ensure the pilot runs on a protected WPA2/WPA3 local Wi-Fi network without public internet exposure.
 
