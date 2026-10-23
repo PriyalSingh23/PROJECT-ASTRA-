@@ -7,6 +7,7 @@ from messaging.models import User, UserSession, SecurityAuditLog, utcnow
 from messaging.security_config import (
     DEMO_ADMIN_PASSWORD,
     DEMO_OPERATOR_PASSWORD,
+    DEMO_VIEWER_PASSWORD,
     get_seed_password,
 )
 
@@ -178,12 +179,13 @@ class AuthService:
         if count:
             if os.environ.get("SHADOWCOMM_ENV", "development").strip().lower() in {"prod", "production"}:
                 legacy_credentials = (
-                    ("admin", DEMO_ADMIN_PASSWORD),
-                    ("operator", DEMO_OPERATOR_PASSWORD),
+                    ("admin", (DEMO_ADMIN_PASSWORD, "FieldAdmin2026!")),
+                    ("operator", (DEMO_OPERATOR_PASSWORD, "OperatorPassword123!")),
+                    ("viewer", (DEMO_VIEWER_PASSWORD,)),
                 )
-                for username, demo_password in legacy_credentials:
+                for username, demo_passwords in legacy_credentials:
                     user = session.query(User).filter_by(username=username).first()
-                    if user and user.check_password(demo_password):
+                    if user and any(user.check_password(password) for password in demo_passwords):
                         raise RuntimeError(
                             f"User '{username}' still uses a known demo password. "
                             "Rotate that account password before production startup."
