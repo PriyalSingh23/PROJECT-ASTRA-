@@ -224,12 +224,18 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
             for line_number, line in enumerate(content.splitlines(), start=1):
                 if token in line.replace(chr(92), "/"):
                     if len(matches) < max_matches:
-                        matches.append({
-                            "path": rel,
-                            "line": line_number,
-                            "kind": "documentation" if path.suffix.lower() in {".md", ".txt"} else "code_or_config",
-                            "text": line.strip()[:300],
-                        })
+                        kind = (
+                                                    "documentation" if path.suffix.lower() in {".md", ".txt"}
+                                                    else "test_fixture" if rel.startswith("tests/") or "/tests/" in rel
+                                                    else "ci_config" if rel.startswith(".github/workflows/")
+                                                    else "code_or_config"
+                                                )
+                                                matches.append({
+                                                    "path": rel,
+                                                    "line": line_number,
+                                                    "kind": kind,
+                                                    "text": line.strip()[:300],
+                                                })
 
     return {
         "token": token,
@@ -240,6 +246,8 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
         "match_count_returned": len(matches),
         "documentation_match_count": sum(item["kind"] == "documentation" for item in matches),
         "code_or_config_match_count": sum(item["kind"] == "code_or_config" for item in matches),
+        "ci_config_match_count": sum(item["kind"] == "ci_config" for item in matches),
+        "test_fixture_match_count": sum(item["kind"] == "test_fixture" for item in matches),
         "matches_truncated": len(matches) >= max_matches,
         "matches": matches,
         "interpretation": (
