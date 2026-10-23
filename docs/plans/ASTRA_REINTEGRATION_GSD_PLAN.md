@@ -90,6 +90,8 @@
 
 ## Phase 3 — Verify and harden repository-root CI
 
+**Latest root-workflow validation:** run #39954131260 passed all nine jobs, including the restored LPI v4 metric-gate job. See the audit's LPI gate section for the hard-check subset and the sample-size limitation; the local Mac/uncommitted-worktree baseline and GSD reconciliation remain pending.
+
 The repository-root `.github/workflows/astra-baseline.yml` is now in place. It has separate jobs for baseline-tool unit tests, inventory/artifact generation, the `Final-Project` Python tests, root and nested field-app test contexts, and production builds for all three frontends.
 
 **Latest verified status before the final path-filter fix:** [run #39951110358](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358), commit `deec42bfca837d5f79ee95df34c99fe13c16352c`, completed all eight jobs successfully on 2026-10-23: baseline-tool tests 5 passed; `Final-Project` 387 passed (5 warnings, 271.36 s); root field app 26 passed (5 warnings, 4.46 s); nested field context 26 passed (5 warnings, 4.35 s); all three frontend builds passed; inventory comparison reported 132 entries per field tree, 132 matching and zero differences. This proves the pushed Linux checkout only—not the local Mac checkout, uncommitted agent changes, or radio hardware. The count rose from 130 to 132 after pinned requirements files were added to both field trees.
@@ -97,7 +99,8 @@ The repository-root `.github/workflows/astra-baseline.yml` is now in place. It h
 - The workflow now installs from exact-version manifests: `Final-Project/requirements-ci.txt`, `SHADOWLINK-FIELD/requirements.txt` plus `requirements-dev.txt`, and matching field manifests under the nested mirror. All were exercised in the successful run above.
 - Track TorchScript/tracer, Starlette/httpx, and Pydantic deprecations as follow-up maintenance.
 - Hardware-dependent tests are not run by these jobs and must stay reported as unavailable until a supported, authorized device test is performed.
-- Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline workflow does not yet reproduce the separate 6-epoch metric gate. The `tests/**` pull-request path filter is being corrected in this review branch before considering CI trigger coverage complete.
+- The root workflow includes an `lpi-v4-metric-gate` job, verified by [run #39954131260](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39954131260): six-epoch CPU training completed and the existing hard smoke subset (`ber_field<1%`, `capture_decodes`) passed. At 5/8 dB, measured field BER was `5.70e-4` / `8.14e-5`, and all 16 messages decoded at both points. **Important limitation:** with 96 frames and 16 messages per SNR, the 95% upper bounds were BER `1.1e-3` and FER `17.1%`; therefore the run does not statistically establish the stricter paper BER/FER targets. Stealth/warden checks are not hard failures in this short-budget job. The synthesized-capture check covers codec/framing, not a physical radio.
+- The `tests/**` pull-request path filter is fixed on `main`.
 
 ## Phase 4 — Offline message reliability
 
