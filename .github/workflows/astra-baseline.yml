@@ -4,7 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "Final-Project/**"
+      - "SHADOWLINK-FIELD/**"
+      - ".github/workflows/**"
+      - "scripts/astra_baseline_audit.py"
+      - "AGENTS.md"
   pull_request:
+    paths:
+      - "Final-Project/**"
+      - "SHADOWLINK-FIELD/**"
+      - ".github/workflows/**"
+      - "scripts/astra_baseline_audit.py"
+      - "AGENTS.md"
   workflow_dispatch:
 
 permissions:

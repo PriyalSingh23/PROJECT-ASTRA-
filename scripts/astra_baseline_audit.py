@@ -178,7 +178,7 @@ def root_inventory(root: Path) -> dict[str, Any]:
             "has_frontend_package_json": (directory / "frontend/package.json").is_file(),
             "has_frontend_lockfile": (directory / "frontend/package-lock.json").is_file(),
             "has_requirements_txt": (directory / "requirements.txt").is_file(),
-            "has_root_github_workflow_dir": (directory / ".github/workflows").is_dir(),
+            "has_app_root_github_workflow_dir": (directory / ".github/workflows").is_dir(),
         }
     workflow_dirs = [root / ".github/workflows"]
     return {

@@ -2,7 +2,7 @@
 
 ## Scope and evidence
 
-This is a read-only audit of the publicly pushed GitHub tree for `PriyalSingh23/PROJECT-ASTRA-`, branch `main`, at commit `76ba2097002dfc9d3aa9a06e629177ef55c8e534` (2026-10-21). It was prepared through the GitHub repository connector; no local OpenCode session, uncommitted working tree, physical hardware, or test runner was accessible during this audit.
+This audit starts from the publicly pushed GitHub tree for `PriyalSingh23/PROJECT-ASTRA-`, branch `main`, at commit `76ba2097002dfc9d3aa9a06e629177ef55c8e534` (2026-10-21). It was prepared through the GitHub repository connector, not the local OpenCode session. A GitHub-hosted baseline workflow was subsequently added on the review branch and completed successfully on 2026-10-23; its results are recorded below. The local Mac working tree and physical hardware remain inaccessible from this audit.
 
 Evidence sources inspected:
 - `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/PROJECT.md`, and `.planning/codebase/{ARCHITECTURE,CONCERNS,INTEGRATIONS,TESTING,STACK,STRUCTURE,CONVENTIONS}.md`
@@ -10,7 +10,7 @@ Evidence sources inspected:
 - `SHADOWLINK-FIELD/docs/IMPLEMENTATION_STATUS.md`, `FEATURE_TRACEABILITY.md`, and `SECURITY_MODEL.md`
 - Current recursive Git tree and recent commit messages.
 
-This report distinguishes committed source from repository-reported test results. It does not assert that tests were executed during this audit.
+This report distinguishes committed source, historical claims, and the fresh Linux CI results collected on the review branch. The CI results do not establish the state of any unpushed local changes or physical radio path.
 
 ## Executive assessment
 
@@ -41,12 +41,13 @@ The repository's documentation points toward a domain split:
 - The latest `main` commit is dated 2026-10-21 and contains an SDR receive-path repair plus new tests.
 - The preceding Motorola LPI commit reports a 384-test full suite, as well as narrower subsystem test totals.
 - `.planning/ROADMAP.md` still labels v2.0 as “in planning” even though its phase checklist and `.planning/STATE.md` mark the phases complete.
-- `.planning/state.json` is even further behind: it marks phase 7 in progress and phases 8–9 pending, while `.planning/STATE.md` says all nine phases are complete.
+- `.planning/state.json` is further behind: it marks phase 7 in progress and phases 8–9 pending, while `.planning/STATE.md` says all nine phases are complete.
+- `.planning/PROJECT.md` labels the product SHADOWCOMM and calls `Final-Project/` the active source of truth; `SHADOWLINK-FIELD/docs/MACOS_SETUP.md` instead labels `Final-Project/` original research provenance and root `SHADOWLINK-FIELD/` the production field application. These statements can be reconciled by ownership per subsystem, but the planning files do not currently say so.
 - Several `.planning/codebase/` reports have analysis dates 2026-10-16 through 2026-10-19 and describe earlier hardware and integration boundaries.
 
 **Risk:** GSD may plan against old status, test counts, names, paths, or assumptions, and later agents may accept outdated reports as current evidence.
 
-**Recommendation:** rerun the project test suites in the actual development environment, save the exact commands and outputs, reconcile the v2.0 status, and generate a new codebase map. Do not replace 291 with 384 solely from a commit message: record the reproducible test count and suite composition.
+**Recommendation:** the review-branch Linux baseline is now recorded below. Treat those counts as suite-specific, not directly comparable to historical `STATE.md` totals that used a different/unclear test scope. Reconcile the phase and naming state through GSD in the actual OpenCode workspace after checking local uncommitted changes; record OS/Python version and exact test root rather than replacing one historical total with another.
 
 ### F3 — The two project trees are separate applications, not yet a proven single runtime
 
@@ -72,15 +73,13 @@ The v4 LPI payload layer documents AES-128-CTR, RS(42,34), and CRC-8; the applic
 
 **Recommendation:** trace a single message from application encryption through fragmentation, adapter framing, receive/reassembly, tag validation and final delivery. Use known-answer tests and adversarial negative tests for the cryptographic code; independently review the custom ML-KEM implementation before relying on it for production security. Do not expose plaintext before AEAD verification succeeds.
 
-### F6 — The checked-in LPI workflow is not at GitHub Actions' required repository-root location
+### F6 — The original LPI workflow was nested; a repository-root baseline workflow now exists on the review branch
 
-The only workflow YAML found is `Final-Project/.github/workflows/ci.yml`. GitHub Actions discovers workflows from the repository-root `.github/workflows/` directory, not a nested subproject's `.github/workflows/` directory. See [GitHub's workflow syntax documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax). The nested file also uses paths such as `lpi_v4/**` and a `working-directory: lpi_v4`, which assume `Final-Project/` is the repository root.
+At the audited `main` commit, the only workflow YAML was `Final-Project/.github/workflows/ci.yml`. GitHub Actions discovers workflows from the repository-root `.github/workflows/` directory, not a nested subproject's `.github/workflows/` directory. See [GitHub's workflow syntax documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax). The nested file also uses paths such as `lpi_v4/**` and a `working-directory: lpi_v4`, which assume `Final-Project/` is the repository root.
 
-The repository Actions API returned `total_count: 0` workflow runs at the time of this audit. That means the prior test totals are historical/project-reported values, not a verified current GitHub Actions baseline.
+A root-level `.github/workflows/astra-baseline.yml` was added on the review branch. Its latest pull-request run completed successfully; exact test and build results appear in the next section. No workflow run existed at the original `main` baseline when first inspected, so historical counts should not be described as automated CI results.
 
-**Risk:** the project may have no automatically executing CI despite having a workflow YAML file committed inside `Final-Project/`.
-
-**Recommendation:** collect a local baseline in the actual stable checkout first. Then add a deliberately designed repository-root workflow in a separate reviewed change, with jobs scoped to the research app and the root field app, explicit dependency setup, frontend builds, and hardware-only tests marked unavailable rather than passed when hardware is absent.
+**Remaining work:** after the baseline is accepted, maintain explicit dependency manifests and review the warnings below. Hardware-only tests must remain unavailable rather than passed when hardware is absent.
 
 ### F7 — Older repository concerns need revalidation, not blind application
 
@@ -98,7 +97,25 @@ The 2026-10-19 `.planning/codebase/CONCERNS.md` flags default secret fallbacks, 
 | SDR | USRP I/O and a software-testable Motorola SDR backend are present; latest commit reports 3/3 software loopback messages | Any over-the-air range, sensitivity, BER, or occupancy result |
 | PQC / AEAD | ML-KEM-768 and AES-GCM-related modules/tests are present | Independent FIPS 203 known-answer validation and complete protocol security review |
 | Mesh / visualization | Routing, relay, UI and RF tools are present in source and planning artifacts | Correctness of live routes under physical radio losses and moving real nodes |
-| CI | One LPI-focused YAML file exists under `Final-Project/.github/workflows/`, outside the required repository-root location | Actions API showed zero workflow runs; the current pushed test baseline is not verified by CI |
+| CI | Base `main` had only a nested LPI YAML; review branch now adds a root-level baseline workflow | Latest review-branch CI passed the three Python test roots and all three frontend builds; no physical hardware is exercised |
+
+## Fresh CI baseline — 2026-10-23
+
+Workflow: [ASTRA baseline run](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39944874537), PR head `1764a2fb92a923c90723fe73cff61a5e375ea060`. GitHub Actions checked out its pull-request merge ref; the run tests the pushed PR/main merge state, not the uncommitted local workspace.
+
+| Job | Result | Notes |
+|---|---:|---|
+| `Final-Project` Python tests | **387 passed** | Python 3.12.15, CPU Torch; 5 warnings, 277.27 s |
+| Root `SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.49 s |
+| Nested `Final-Project/SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.53 s |
+| `Final-Project/frontend` production build | **Passed** | `npm ci` + `npm run build` |
+| Root `SHADOWLINK-FIELD/frontend` production build | **Passed** | `npm ci` + `npm run build` |
+| Nested field-copy frontend production build | **Passed** | `npm ci` + `npm run build` |
+| Read-only inventory + manifest | **Passed** | 130 entries on each field tree; 130 matched; 0 different, 0 only-left, 0 only-right |
+
+Warnings observed are maintenance items, not test failures: TorchScript `torch.jit.load`/`torch.jit.trace` deprecation and a tracer warning; field app tests also emit Starlette/httpx and Pydantic config deprecations. The three field-app build/test jobs run both copies separately on purpose, to establish that the mirrored path currently behaves the same when invoked from its own working directory. These duplicated passes are not 52 distinct field-app tests.
+
+The root inventory artifact is uploaded as `astra-baseline-inventory` on the workflow run. To reproduce on a stable local checkout after the active agent reaches a checkpoint, run the baseline script in inventory-only mode first, then re-run with `--run-tests --run-builds`. The GitHub run does not prove the live radio, Motorola model, Pi, or local Apple Silicon environment works.
 
 ## Recommended order of work
 
@@ -113,7 +130,8 @@ The 2026-10-19 `.planning/codebase/CONCERNS.md` flags default secret fallbacks, 
 ## Safety and release boundaries
 
 - This audit does not change or merge `main`.
-- No ASTRA project test suite was run through this GitHub-only session. The added baseline runner itself passed syntax compilation and synthetic tree-comparison smoke checks only.
+- The fresh CI run below passed all three Python test roots and all three frontend builds. This is a Linux CI baseline for pushed source, not a test of the local Mac working tree or physical hardware.
+- The baseline runner's inventory job passed and recorded 130/130 matching relative entries between the two field-app trees.
 - No radio was armed or operated.
 - No physical range, BER, FER, latency, or jamming-resilience result is inferred from software simulation.
 - Do not merge this plan or delete duplicate source paths without reviewing it alongside the current local agent's changes.

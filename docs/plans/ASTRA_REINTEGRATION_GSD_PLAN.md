@@ -46,7 +46,7 @@
 - Baseline JSON records repository root, commit SHA, current branch, dirty state and runtime versions.
 - All three Python test roots and all available frontend builds have explicit pass/fail/blocked results. Tests are not silently omitted when dependencies or toolchains are missing.
 - The duplicate tree comparison reports exact same/different/missing paths and hashes. At the audited commit, all 130 relative entries matched.
-- The operational ownership rule is written down: root field application is canonical for field operations; `Final-Project` is canonical for the LPI research stack; the nested field copy remains frozen pending a path-reference and local-state review.
+- The domain-scoped ownership rule is written down: root `SHADOWLINK-FIELD/` is the documented production operator app; `Final-Project/` owns the legacy research/Flask/LPI-CGAN stack; `Final-Project/SHADOWLINK-FIELD/` is a byte-identical nested mirror at the audited revision. Keep the mirror frozen until path references and local uncommitted changes are reviewed.
 - No application runtime behavior changes and no duplicate source files are removed in this phase.
 - GSD state files are reconciled only from evidence that was actually collected.
 
@@ -67,12 +67,12 @@
 
 An initial `.github/workflows/astra-baseline.yml` has been added on this review branch. It attempts four parallel gates: the Final-Project Python tests, root SHADOWLINK-FIELD Python tests, nested-copy path-context tests, and production builds for all three frontends.
 
-**Status: not verified yet.** The GitHub Actions API still reports zero workflow runs for this branch, so dependency installation and job results are not known. Do not infer a pass from the workflow file existing.
+**Status: initial baseline passed in GitHub Actions** on 2026-10-23 (review-branch run; see the [workflow result](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39944874537)). Results: `Final-Project` 387 passed; root and nested field-app tests 26 passed each; all three frontend builds passed; inventory manifest found 130/130 matching relative entries. The research suite took 277.27 seconds and emitted five warnings; the field suites each emitted five deprecation warnings. This proves the pushed CI checkout only, not the local Mac checkout, uncommitted agent changes, or radio hardware.
 
-- Observe the first actual run; tune dependency installs only from concrete failure logs.
-- Move dependencies into maintained manifests after the baseline is known; avoid relying on an undocumented CI-only package list.
-- Ensure physical-hardware checks are reported as unavailable without devices, never passed.
-- Retain/adapt the existing LPI metric gate with paths and working directories that match the monorepo layout.
+- Keep explicit dependency setup for now; after this baseline, move it into maintained manifests in a dedicated change and pin compatible versions.
+- Track TorchScript/tracer, Starlette/httpx, and Pydantic deprecations as follow-up maintenance.
+- Hardware-dependent tests are not run by these jobs and must stay reported as unavailable until a supported, authorized device test is performed.
+- Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline job here does not yet reproduce the separate 6-epoch metric gate.
 
 ## Phase 4 — Offline message reliability
 
@@ -107,7 +107,7 @@ An initial `.github/workflows/astra-baseline.yml` has been added on this review 
 ## GSD sequence in OpenCode
 
 1. In the isolated worktree, run `/gsd-help`, `/gsd-progress`, `/gsd-health`, then `/gsd-map-codebase --fast --focus tech+arch` and `/gsd-map-codebase --fast --focus quality`.
-2. Use `gsd-new-milestone` only after reconciling the existing milestone state. The current planning files conflict, so do not assume a new milestone is already initialized.
-3. Specify/discuss/plan the next available phase, then review the plan before execution. Use the next available phase number as reported by GSD; the previous committed roadmap goes through Phase 9.
+2. Do not create another milestone yet. First reconcile `.planning/PROJECT.md`, `.planning/STATE.md`, `.planning/state.json`, and `.planning/ROADMAP.md`: they disagree on project identity/source-of-truth and phase completion. The active local GSD state may differ from these pushed files.
+3. After local GSD reports reconciled state, capture this work as the next phase/milestone through `/gsd-capture` and the standard spec/discuss/plan/review sequence. Avoid hand-assigning phase 10 while v2.0 status is inconsistent.
 4. Execute only the baseline phase first, with validation; then run `gsd-verify-work`, `gsd-code-review`, and `gsd-validate-phase` before advancing.
 5. Do not run `gsd-autonomous` in the shared working directory while the other agent is active.
