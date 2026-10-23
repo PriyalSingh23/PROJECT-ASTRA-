@@ -6,9 +6,9 @@ current_phase: 9
 current_phase_name: Advanced RF Field Tools, Live Waterfall & Diagnostic Bench
 status: complete
 stopped_at: Milestone v2.0 complete (all 9 phases verified)
-last_updated: "2026-10-20T15:20:00.000Z"
+last_updated: "2026-10-23T12:22:00.000Z"
 last_activity: 2026-10-20
-last_activity_desc: Milestone v2.0 complete (Phases 6-9 verified, 100% tests green, 0 build/lint errors)
+last_activity_desc: Reconciled root GSD phase status with ROADMAP; v2.0 software scope remains complete; next ASTRA reintegration milestone awaits a stable local-agent checkpoint
 progress:
   total_phases: 4
   completed_phases: 4
@@ -24,7 +24,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-10-20)
 
 **Core value:** Deliver reliable, verified, and tamper-resistant messages between operational endpoints (Station Alpha and Station Bravo) through persistent offline queues, signed acknowledgements, and crash-resilient store-and-forward architecture with zero data loss.  
-**Current focus:** Milestone v2.0 completed and verified.
+**Current focus:** v2.0 software scope completed; create the next ASTRA reintegration milestone only after the local agent reaches a stable checkpoint.
 
 ---
 
@@ -34,12 +34,19 @@ Phase: 9 (Advanced RF Field Tools, Live Waterfall & Diagnostic Bench) — COMPLE
 Status: Complete
 Last activity: 2026-10-20 — Phase 9 goal-backward verification completed (score: 1.0, 291/291 automated tests green, Vite build 100% clean)
 
+## Monorepo validation boundary (2026-10-23)
+
+- The 291-test figure above is the historical v2.0 GSD milestone result reported on 2026-10-20; it is not a repo-wide test total.
+- The latest completed draft PR #1 CI run (#39951110358) passed: 387 tests in `Final-Project/`, 26 tests in root `SHADOWLINK-FIELD/`, 26 tests from the nested mirror, 5 baseline-tool tests, and all three frontend builds. Inventory shows 132/132 matching field-tree entries. That run tested PR head `deec42bfca837d5f79ee95df34c99fe13c16352c`. A newer run is pending for PR #1 head `123cdbcde0c235d6b04436314ebcc1e2cc666aaa` after a path-filter adjustment. Neither run tests local Mac/unpushed changes or physical hardware.
+- The root and nested field-app trees are byte-identical in the audited Git snapshot (132 entries including the added dependency manifests). Do not remove the nested copy until local dirty files, launchers and deployment assumptions have been reviewed.
+- No physical Motorola radio, Raspberry Pi, sound card or USRP was operated by the repo-wide CI. Physical-radio and over-the-air acceptance remains pending; software tests must not be presented as hardware results.
+
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 18 / 18 (v1.0: 10/10, v2.0: 8/8)
 - Total tasks completed: 86
-- Total automated tests: 291 passed (100%)
+- Historical v2.0 GSD test run: 291 passed (100%) on 2026-10-20; scope differs from the current monorepo baseline
 - Average duration: ~5 min / plan
 
 **By Phase:**
@@ -74,7 +81,7 @@ Last activity: 2026-10-20 — Phase 9 goal-backward verification completed (scor
 
 ### Pending Todos
 
-None — Phase 8 verified complete (Score: 1.0). Ready for Phase 9.
+No v2.0 phase todos remain in the recorded software milestone. ASTRA reintegration and physical acceptance are proposed follow-up work, not completed v2.0 requirements.
 
 ### Blockers/Concerns
 
@@ -85,10 +92,12 @@ None — Phase 8 verified complete (Score: 1.0). Ready for Phase 9.
 
 ## Operator Next Steps
 
-- Discuss Phase 9: Advanced RF Field Tools, Live Waterfall & Diagnostic Bench with `/gsd-discuss-phase 9`
+- After the active local coding agent reaches a stable checkpoint, run `/gsd-progress` and `/gsd-health` from the repository root.
+- Then run `/gsd-new-milestone` from the repository root for ASTRA reintegration and field validation. Do not start a duplicate GSD project inside the nested field-app copy.
+- Keep the `Final-Project/` and field-app owners separate; any nested-mirror removal must be its own reviewed change.
 
 ## Session
 
-**Last session:** 2026-10-20T14:10:00.000Z
-**Stopped at:** Phase 8 verified complete
-**Resume file:** .planning/phases/08-multi-hop-ad-hoc-mesh-routing-relay-protocol/08-VERIFICATION.md
+**Last planning reconciliation:** 2026-10-23
+**Stopped at:** v2.0 software milestone complete; next ASTRA milestone not yet initialized
+**Resume file:** `.planning/ROADMAP.md`

@@ -1,14 +1,20 @@
-# SHADOWCOMM — Reliable Tactical Communications & Research Platform
+# ASTRA — Reliable Communications, LPI Research & Field Platform
 
 ## What This Is
 
-SHADOWCOMM is a reliable, secure, and professional tactical communications and research platform evolved from an experimental LPI-CGAN and SDR research repository. It provides persistent offline messaging, tamper-resistant cryptographic framing, multi-transport interoperability across local IP, simulated wireless links, DMR radio adapters, and neural spread-spectrum waveforms. The platform features an Apple Silicon-optimized React 19 operator console, dynamic network impairment injection, and rigorous model checkpoint governance.
+ASTRA is a reliable communications platform and LPI research workspace evolved from experimental LPI-CGAN and SDR work. It provides persistent offline messaging, tamper-resistant cryptographic framing, multi-transport interoperability across local IP, simulated wireless links, DMR radio adapters, and neural spread-spectrum waveforms. The platform features an Apple Silicon-optimized React 19 operator console, dynamic network impairment injection, and rigorous model checkpoint governance.
+
+
+
+**Monorepo ownership:** `Final-Project/` owns the LPI-CGAN/DSP research path and its legacy Flask messaging/application code. Root `SHADOWLINK-FIELD/` is the operational field-operator application. `Final-Project/SHADOWLINK-FIELD/` is an identical mirror at the audited revision; keep it frozen until local uncommitted changes, launchers and relative paths are checked, then consider consolidation in a separate reviewed change. Root `.planning/` is the monorepo ASTRA planning context; `Final-Project/.planning/` remains historical/research context and is not auto-synchronized.
 
 ## Core Value
 
 Deliver reliable, verified, and tamper-resistant messages between operational endpoints (Station Alpha and Station Bravo) through persistent offline queues, signed acknowledgements, and crash-resilient store-and-forward architecture with zero data loss.
 
-## Current Milestone: v2.0 Advanced Tactical Mesh, Cryptography & Hardware Field Suite
+## Last completed milestone: v2.0 Advanced Tactical Mesh, Cryptography & Hardware Field Suite
+
+**Status boundary (2026-10-23):** root GSD files mark phases 1–9 complete in the software/test scope. This does not imply successful physical-radio acceptance, formal PQC certification, or the absence of local-only changes. The next ASTRA reintegration milestone is proposed but not initialized yet.
 
 **Goal:** Deliver a decentralized, post-quantum secure multi-hop tactical communications network with physically isolated station databases, ML-KEM hybrid encryption, ad-hoc bundle routing across > 5 nodes, and live spectrum diagnostics.
 
@@ -53,29 +59,33 @@ Deliver reliable, verified, and tamper-resistant messages between operational en
 - ✓ Scientific Research Console: Recharts semi-logarithmic BER vs SNR (10^0 to 10^-5), 74-epoch convergence viewer, 8-cell EW matrix — v1.0 (Phase 5)
 - ✓ SDR Flowgraph Harmonization: GNU Radio flowgraphs and UHD drivers tuned to 2.484 GHz and 245.76 kS/s — v1.0 (Phase 5)
 
-### Active
+### Outstanding validation and reintegration work
 
-<!-- Scoped requirements for upcoming Milestone 2 development -->
+These are evidence/acceptance gaps; an unchecked item does not imply that the related software module is absent.
 
-- [ ] Multi-hop ad-hoc mesh routing protocol across > 5 mobile endpoints (`V2-01`)
-- [ ] Live hardware over-the-air validation on verified Motorola APX / MOTOTRBO hardware (`V2-02`)
-- [ ] Hardware Interface Control Document (ICD) compliance verification for STAR-V SDR (`V2-03`)
-- [ ] Post-Quantum Cryptography (PQC) hybrid key encapsulation (ML-KEM / Kyber) (`V2-04`)
-- [ ] Multi-database physical isolation (`alpha.db` and `bravo.db`) across distinct ports / processes
+- [ ] Capture the local Mac/Git baseline after the active coding agent reaches a stable checkpoint; record uncommitted changes before any cleanup.
+- [ ] Reconcile root GSD state and start the next ASTRA reintegration milestone only after a stable checkpoint.
+- [ ] Validate multi-hop behavior across more than five nodes using documented software tests, then separately record any physical-field result.
+- [ ] Perform authorized over-the-air validation on the exact supported Motorola APX/MOTOTRBO model and firmware; software loopback is not an RF result.
+- [ ] Verify the applicable STAR-V Hardware Interface Control Document and approved hardware interface before any physical operation.
+- [ ] Review the end-to-end PQC path and run official ML-KEM/FIPS 203 known-answer tests; module presence and unit tests alone are not a complete security review.
+- [ ] Reproduce multi-database isolation on the intended local deployment with separate processes, ports and databases.
+- [ ] Decide whether to remove the byte-identical nested field-app mirror only after the local agent's unpushed state and all launcher/import references are reviewed.
+- [ ] Accept further CGAN/CNN training only when held-out benchmark results improve agreed BER/FER, goodput and latency metrics against a conventional baseline.
 
 ### Out of Scope
 
 <!-- Explicit boundaries to prevent scope creep -->
 
-- Wholesale application rewrite or framework replacement — Existing Flask backend, React frontend, SQLite persistence, and PyTorch DSP are the verified source of truth.
+- Wholesale application rewrite or framework replacement — preserve both existing domains: the field app under root `SHADOWLINK-FIELD/` and the LPI/legacy application under `Final-Project/`.
 - Live RF broadcast on unverified hardware — Strictly prohibited for regulatory compliance and equipment safety.
 - Marketing claims of invisibility or undetectability — Research must remain empirically grounded with factual EW detection statistics.
 - Automatic Git operations — Never commit, push, merge, reset, or alter git state without explicit user authorization.
 
 ## Context
 
-- **Current State:** Shipped `v1.0` MVP on 2026-10-20. 78 automated backend tests passing in 21.12s; 0 TypeScript / build errors.
-- **Source of Truth:** `/Users/sabhay/Downloads/PROJECT 13OCT/Final-Project` is the active, verified codebase.
+- **Current State:** root GSD marks v2.0 phases 1–9 complete as of 2026-10-20. The latest completed Linux baseline run for PR #1 head `deec42bfca837d5f79ee95df34c99fe13c16352c` passed on 2026-10-23: 387 `Final-Project` tests, 26 tests from each field-app path, 5 baseline-tool tests, and all three frontend builds. A newer run is pending for PR #1 head `123cdbcde0c235d6b04436314ebcc1e2cc666aaa` after a CI path-filter adjustment. These are pushed-source CI results, not local Mac changes or physical-hardware validation.
+- **Source of Truth:** this is a monorepo with domain-specific owners as defined above. Do not treat `Final-Project/` alone as the whole ASTRA system.
 - **Development Environment:** macOS (Darwin / Apple Silicon `arm64`) with Python 3.12 (`radioconda`), Node.js v24, npm 11.
 - **Port Strategy:** Port 5050 is the unified canonical port for Flask REST API and static React UI distribution.
 - **Hardware Acceleration:** Apple Metal (MPS) detected automatically for PyTorch tensor operations with deterministic CPU fallback for unsupported operations.
@@ -96,4 +106,4 @@ Deliver reliable, verified, and tamper-resistant messages between operational en
 | Preserve Research Core (`lpi_v4/`) | Keeps physical layer signal processing intact and available for SDR evaluation | ✓ Good |
 
 ---
-*Last updated: 2026-10-20 after v1.0 milestone*
+*Last updated: 2026-10-23 during ASTRA monorepo/GSD reconciliation*

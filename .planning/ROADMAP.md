@@ -1,16 +1,18 @@
-# Roadmap: SHADOWCOMM — Reliable Tactical Communications & Research Platform
+# Roadmap: ASTRA — Reliable Communications, LPI Research & Field Platform
 
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-10-20)
-- 🚧 **v2.0 Advanced Tactical Mesh, Cryptography & Hardware Field Suite** — Phases 6-9 (in planning)
+- ✅ **v2.0 Advanced Tactical Mesh, Cryptography & Hardware Field Suite** — Phases 6–9 software scope completed 2026-10-20; physical hardware acceptance remains pending
 
 ---
 
 ## Phases
 
+**Verification boundary:** phase checkboxes record the existing GSD software/test verification. They do not establish over-the-air range, live Motorola interoperability, certified PQC, or physical multi-node operation. Track those separately in `.planning/PROJECT.md` and the field acceptance plan.
+
 <details>
-<summary>✅ v1.0 MVP (Phases 1-5) — SHIPPED 2026-10-20</summary>
+<summary>✅ ASTRA v1.0 MVP (Phases 1-5) — SOFTWARE SCOPE SHIPPED 2026-10-20</summary>
 
 - [x] Phase 1: Dual-Endpoint Reliable Messaging & Verified Receipt Reconciliation (2/2 plans) — completed 2026-10-16
 - [x] Phase 2: Dual-Station Operator Experience & Recipient Inbox Verification (2/2 plans) — completed 2026-10-19
@@ -46,7 +48,7 @@
 
 ### Phase 7: Post-Quantum Hybrid Cryptography (ML-KEM / Kyber + AES-256-GCM)
 
-**Goal**: Secure tactical messaging against quantum decryption using hybrid ML-KEM-768 key encapsulation with authenticated AES-256-GCM v3 envelopes.  
+**Recorded software goal**: integrate hybrid ML-KEM-768 key establishment with authenticated AES-256-GCM v3 envelopes. The phase checkbox is not a formal cryptographic certification; independent FIPS 203 known-answer tests and an end-to-end protocol review remain in the ASTRA validation backlog.  
 **Depends on**: Phase 6  
 **Requirements**: PQC-01, PQC-02, PQC-03  
 **Success Criteria** (what must be TRUE):
@@ -82,6 +84,11 @@
 
 ---
 
-## Backlog
+## Backlog — ASTRA reintegration (proposed; not yet initialized as a GSD milestone)
 
-(No backlog items currently pending)
+1. Establish the local Mac baseline and reconcile uncommitted work after the active agent reaches a stable checkpoint.
+2. Start the next ASTRA reintegration milestone from the repository-root GSD context; keep `Final-Project/.planning/` as historical research context.
+3. Decide the canonical field-app tree after local path/launcher verification; do not delete the nested mirror as incidental cleanup.
+4. Verify the end-to-end security, offline delivery, fragmentation/FEC, PHY benchmark, and hardware acceptance paths with separate evidence labels for simulation, software loopback and physical testing.
+5. Accept future CGAN/CNN changes only after held-out comparisons against the conventional PHY baseline.
+
