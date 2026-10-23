@@ -81,7 +81,7 @@ def get_configured_secret(
             )
         return value
 
-    if not value:
+    if not value or value == development_default or _is_placeholder(value):
         if development_default is None:
             raise RuntimeError(f"{name} is not configured.")
         _warn_once(
@@ -90,14 +90,10 @@ def get_configured_secret(
         )
         return development_default
 
-    if (
-        value == development_default
-        or _is_placeholder(value)
-        or len(value) < minimum_length
-    ):
+    if len(value) < minimum_length:
         _warn_once(
             name,
-            "configured value looks like a demo, placeholder, or short secret; production mode will reject it",
+            "configured value is shorter than the production minimum; production mode will reject it",
         )
     return value
 
@@ -130,3 +126,10 @@ def get_seed_password(name: str, development_default: str) -> str:
         minimum_length=16,
         purpose="initial user password",
     )
+
+def ensure_legacy_component_not_production(component: str, reason: str) -> None:
+    """Prevent a known legacy/insecure component from running in production."""
+    if is_production():
+        raise RuntimeError(
+            f"{component} is disabled when SHADOWCOMM_ENV=production: {reason}"
+        )
