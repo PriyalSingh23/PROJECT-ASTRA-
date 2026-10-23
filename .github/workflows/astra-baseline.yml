@@ -41,6 +41,7 @@ on:
       - ".github/workflows/**"
       - "AGENTS.md"
       - "scripts/astra_baseline_audit.py"
+      - "tests/**"
       - "Final-Project/*.py"
       - "Final-Project/**/*.py"
       - "Final-Project/*.grc"
