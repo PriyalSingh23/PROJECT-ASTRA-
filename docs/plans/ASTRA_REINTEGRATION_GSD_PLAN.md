@@ -52,6 +52,27 @@
 - No application runtime behavior changes and no duplicate source files are removed in this phase.
 - GSD state files are reconciled only from evidence that was actually collected.
 
+## Phase 1b — Reconcile GSD planning ownership (planning-only)
+
+### Evidence found
+- Root `.planning/` has 146 entries; nested `Final-Project/.planning/` has 83.
+- There are 83 shared relative paths; 79 have identical Git object SHAs. The shared `STATE.md` differs, and the `codebase/` and `phases/` subtrees differ.
+- Only root `.planning/` has `.planning/state.json` and the full additional milestone history.
+- The shared project file still labels the system SHADOWCOMM and says `Final-Project` is the only source of truth, which no longer reflects the domain partition described by root `AGENTS.md`.
+
+### Work after local checkpoint
+- In OpenCode, run `/gsd-progress` and `/gsd-health` from the repository root and from `Final-Project/` without using repair options; record which project state each command loads.
+- Make root `.planning/` the monorepo ASTRA planning source for cross-system phases; retain nested `.planning/` as historical LPI/research planning until it is deliberately retired.
+- Update root `.planning/PROJECT.md` to ASTRA and describe domain ownership without moving source code.
+- Reconcile root `.planning/STATE.md`, `.planning/state.json`, and `.planning/ROADMAP.md` based on completed plans and the passing remote CI baseline. Do not change physical-hardware readiness status based solely on software tests.
+- Record the latest local branch, dirty status and unpushed work before changing planning files, so these updates can be rebased safely.
+
+### Acceptance
+- Running GSD from the repo root selects the monorepo project/roadmap.
+- Running GSD from `Final-Project/` is either explicitly documented as legacy/research context or disabled through a documented process, not accidentally treated as the whole ASTRA project.
+- Root `STATE.md`, `state.json`, and `ROADMAP.md` agree on the next milestone and phase status.
+- Product identity reads ASTRA in current-facing root planning text. Legacy code identifiers and the nested historical planning copy remain unchanged.
+
 ## Phase 2 — Migrate or remove the nested mirror (separate reviewed change)
 
 ### Work

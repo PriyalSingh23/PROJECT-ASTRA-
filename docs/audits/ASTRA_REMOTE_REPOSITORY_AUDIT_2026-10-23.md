@@ -87,6 +87,16 @@ The 2026-10-19 `.planning/codebase/CONCERNS.md` flags default secret fallbacks, 
 
 **Recommendation:** turn each concern into a source reference and test: current state, exploit/failure condition, severity, owner, remediation, and regression test.
 
+### F8 — GSD planning artifacts are duplicated across the monorepo and research subtree
+
+The root `.planning/` has 146 manifest entries; `Final-Project/.planning/` has 83. Of their 83 shared relative entries, 79 have identical Git object SHAs; `STATE.md` and the `codebase/` and `phases/` subtrees differ. The root planning tree also has many milestone/phase history files absent from the nested tree and a `.planning/state.json` that does not exist in the nested planning tree.
+
+Both copies share `.planning/PROJECT.md` which still calls the product SHADOWCOMM and names `Final-Project` as the source of truth. That historical statement conflicts with root `AGENTS.md`, which divides domain responsibility between `Final-Project` (LPI/DSP research) and root `SHADOWLINK-FIELD` (field backend), and with the root field setup guide.
+
+**Risk:** GSD invoked from the repository root and GSD invoked from `Final-Project/` may load different planning contexts and suggest different next phases. Blindly mirroring or deleting either `.planning` directory may erase useful historical plans.
+
+**Recommendation:** use root `.planning/` for monorepo-level ASTRA work and treat `Final-Project/.planning/` as legacy/research context until an operator inspects local GSD state. In a dedicated planning-only PR, update the root project identity and ownership map, reconcile `STATE.md`, `state.json`, and `ROADMAP.md` from verifiable results, and leave the nested planning copy unchanged unless it is explicitly retired.
+
 ## Current evidence snapshot
 
 | Area | Evidence available in committed repository | What is not established by this remote audit |
