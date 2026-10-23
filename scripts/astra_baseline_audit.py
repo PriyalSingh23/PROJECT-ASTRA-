@@ -161,6 +161,82 @@ def compare_trees(root: Path, left_rel: str, right_rel: str) -> dict[str, Any]:
     }
 
 
+
+TEXT_SUFFIXES = {
+    ".md", ".py", ".sh", ".bash", ".bat", ".ps1", ".yml", ".yaml",
+    ".json", ".toml", ".ini", ".cfg", ".txt", ".html", ".htm",
+    ".ts", ".tsx", ".js", ".jsx", ".css", ".sql", ".service", ".grc",
+}
+REFERENCE_SCAN_MAX_BYTES = 2 * 1024 * 1024
+
+
+def path_reference_audit(root: Path) -> dict[str, Any]:
+    """Find explicit references to the nested field-app path from outside that copy.
+
+    This is a conservative static scan, not a proof that deleting the nested copy is safe:
+    parent-relative imports, dynamically constructed paths, and local/untracked files may
+    still depend on it.
+    """
+    token = "Final-Project/SHADOWLINK-FIELD"
+    files_scanned = 0
+    large_files_skipped = 0
+    unreadable_files_skipped = 0
+    matches: list[dict[str, Any]] = []
+    max_matches = 500
+    nested_prefix = "Final-Project/SHADOWLINK-FIELD/"
+
+    for current, dirs, files in os.walk(root, followlinks=False):
+        current_path = Path(current)
+        rel_current = current_path.relative_to(root).as_posix()
+        dirs[:] = sorted(
+            name for name in dirs
+            if name not in IGNORED_DIRS
+            and not (current_path / name).is_symlink()
+            and not (rel_current == "Final-Project" and name == "SHADOWLINK-FIELD")
+        )
+        for name in sorted(files):
+            path = current_path / name
+            rel = path.relative_to(root).as_posix()
+            if rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD":
+                continue
+            if path.suffix.lower() not in TEXT_SUFFIXES or path.is_symlink() or not path.is_file():
+                continue
+            try:
+                if path.stat().st_size > REFERENCE_SCAN_MAX_BYTES:
+                    large_files_skipped += 1
+                    continue
+                content = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                unreadable_files_skipped += 1
+                continue
+            files_scanned += 1
+            for line_number, line in enumerate(content.splitlines(), start=1):
+                if token in line.replace("\\\\", "/"):
+                    if len(matches) < max_matches:
+                        matches.append({
+                            "path": rel,
+                            "line": line_number,
+                            "text": line.strip()[:300],
+                        })
+
+    return {
+        "token": token,
+        "files_scanned": files_scanned,
+        "large_files_skipped": large_files_skipped,
+        "unreadable_files_skipped": unreadable_files_skipped,
+        "match_count_returned": len(matches),
+        "matches_truncated": len(matches) >= max_matches,
+        "matches": matches,
+        "interpretation": (
+            "Direct literal references found; review each before consolidating the nested copy."
+            if matches else
+            "No direct literal references were found outside the nested copy in scanned text files. "
+            "This does not prove the nested copy can be deleted: inspect relative paths, local/untracked "
+            "files, imports, packaging, and deployment assumptions."
+        ),
+    }
+
+
 def root_inventory(root: Path) -> dict[str, Any]:
     app_roots = [
         "Final-Project",
@@ -236,6 +312,8 @@ def main() -> int:
         "environment": environment_info(root),
         "inventory": root_inventory(root),
         "duplicate_tree_comparison": compare_trees(root, "SHADOWLINK-FIELD", "Final-Project/SHADOWLINK-FIELD"),
+        "nested_path_reference_audit": path_reference_audit(root),
+        "github_context": {key: os.environ.get(key) for key in ("GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_SHA", "GITHUB_HEAD_REF", "GITHUB_BASE_REF") if os.environ.get(key)},
         "baseline_commands": [],
         "notes": [
             "Inventory and file comparison are read-only.",
