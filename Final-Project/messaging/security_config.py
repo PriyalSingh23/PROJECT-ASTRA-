@@ -32,6 +32,15 @@ def is_production() -> bool:
     return os.environ.get("SHADOWCOMM_ENV", "development").strip().lower() in _PRODUCTION_MODES
 
 
+def endpoint_authentication_required() -> bool:
+    """Require endpoint tokens in production even if the legacy opt-in flag is unset."""
+    if is_production():
+        return True
+    return os.environ.get("SHADOWCOMM_REQUIRE_AUTH", "false").strip().lower() in {
+        "true", "1", "yes",
+    }
+
+
 def _is_placeholder(value: str) -> bool:
     candidate = value.strip().lower()
     return (
