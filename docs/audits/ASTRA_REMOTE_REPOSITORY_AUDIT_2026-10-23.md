@@ -149,12 +149,14 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 
 ### F9 — Static path-reference scan supports, but does not authorize, mirror removal
 
-The review-branch inventory artifact reports:
-- 636 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
-- 8 direct literal path matches total: 6 documentation lines and 2 code/config lines
-- Both code/config matches are in the newly added `.github/workflows/astra-baseline.yml`, where the nested copy is intentionally tested
-- The six documentation matches are in this audit and the reintegration plan; no pre-existing application source/config/launcher match was found in the scanned pushed tree
-- 130 of 130 relative entries match across the two copies
+The latest review-branch inventory artifact (after adding matching dependency manifests) reports:
+- 639 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
+- 13 direct literal path matches total: 7 documentation lines and 6 code/config lines
+- All six code/config matches are in the new `.github/workflows/astra-baseline.yml`, where the nested copy is intentionally tested for path-context compatibility
+- The seven documentation matches are in this audit and the reintegration plan; no pre-existing application source/config/launcher match was found in the scanned pushed tree
+- The field trees now contain 132 entries each; all 132 relative entries match
+
+At the original audited `main` commit, each field tree had 130 entries; the two newly added requirements manifests raised that to 132 while preserving identical contents.
 
 This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
 
