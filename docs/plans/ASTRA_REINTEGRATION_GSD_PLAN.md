@@ -63,12 +63,16 @@
 - The research stack still runs its relevant tests after any path changes.
 - Deletion is reviewed separately and never occurs as an incidental audit cleanup.
 
-## Phase 3 — Add functioning repository-root CI
+## Phase 3 — Verify and harden repository-root CI
 
-- Add a root `.github/workflows/` workflow that tests both maintained applications and builds their frontends.
-- Pin supported Python and Node versions after the baseline run; install dependencies from explicit manifests.
-- Mark physical-hardware checks as unavailable unless a validated device is present. Do not conflate software loopback with radio acceptance.
-- Retain the existing LPI evaluation gate, but relocate/adapt it so all working directories and path filters match the monorepo layout.
+An initial `.github/workflows/astra-baseline.yml` has been added on this review branch. It attempts four parallel gates: the Final-Project Python tests, root SHADOWLINK-FIELD Python tests, nested-copy path-context tests, and production builds for all three frontends.
+
+**Status: not verified yet.** The GitHub Actions API still reports zero workflow runs for this branch, so dependency installation and job results are not known. Do not infer a pass from the workflow file existing.
+
+- Observe the first actual run; tune dependency installs only from concrete failure logs.
+- Move dependencies into maintained manifests after the baseline is known; avoid relying on an undocumented CI-only package list.
+- Ensure physical-hardware checks are reported as unavailable without devices, never passed.
+- Retain/adapt the existing LPI metric gate with paths and working directories that match the monorepo layout.
 
 ## Phase 4 — Offline message reliability
 
