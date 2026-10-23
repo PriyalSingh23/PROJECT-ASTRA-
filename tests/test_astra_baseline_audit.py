@@ -80,8 +80,9 @@ class BaselineAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "config").mkdir()
+            windows_path = "Final-Project" + chr(92) + "SHADOWLINK-FIELD"
             (root / "config" / "launch.json").write_text(
-                '{"path": "Final-Project\\\\SHADOWLINK-FIELD"}\n', encoding="utf-8"
+                '{"path": "' + windows_path + '" }\\n', encoding="utf-8"
             )
             result = AUDIT.path_reference_audit(root)
             self.assertEqual(result["match_count_returned"], 1)
