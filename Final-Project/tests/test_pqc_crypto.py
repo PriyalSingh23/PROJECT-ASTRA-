@@ -173,6 +173,34 @@ class TestMLKEM768Core:
         assert ss_decaps == ss_encaps
         assert len(ss_decaps) == 32
 
+    def test_mlkem768_interoperates_with_cryptography_reference(self):
+        """Cross-check the custom ML-KEM-768 byte formats and primitives independently.
+
+        This is an interoperability regression test, not a FIPS 203 certification or
+        a replacement for NIST known-answer tests.
+        """
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import mlkem
+
+        # Reference implementation encapsulates to our custom-generated public key;
+        # our decapsulation must recover exactly the reference shared secret.
+        custom_ek, custom_dk = mlkem768_keygen()
+        reference_public = mlkem.MLKEM768PublicKey.from_public_bytes(custom_ek)
+        reference_secret, reference_ciphertext = reference_public.encapsulate()
+        assert len(reference_ciphertext) == MLKEM_CT_BYTES
+        assert mlkem768_decaps(custom_dk, reference_ciphertext) == reference_secret
+
+        # Reverse direction: our encapsulation must interoperate with the independent
+        # reference implementation's generated key pair and decapsulation.
+        reference_private = mlkem.MLKEM768PrivateKey.generate()
+        reference_public_bytes = reference_private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        custom_ciphertext, custom_secret = mlkem768_encaps(reference_public_bytes)
+        assert len(custom_ciphertext) == MLKEM_CT_BYTES
+        assert reference_private.decapsulate(custom_ciphertext) == custom_secret
+
     def test_mlkem768_implicit_rejection_on_tamper(self):
         """Verifies bit-flipped ciphertext decapsulates to a pseudo-random secret (Fujisaki-Okamoto)."""
         ek, dk = mlkem768_keygen()
