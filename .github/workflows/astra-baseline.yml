@@ -54,11 +54,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: Final-Project/requirements-ci.txt
       - name: Install research and test dependencies
+        working-directory: Final-Project
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy scipy flask flask-socketio pycryptodome reedsolo requests sqlalchemy pytest pyyaml h5py cryptography matplotlib scikit-learn
-          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-ci.txt
       - name: Run research/application tests
         working-directory: Final-Project
         env:
@@ -76,10 +77,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: SHADOWLINK-FIELD/requirements-dev.txt
       - name: Install field application and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
+          python -m pip install -r SHADOWLINK-FIELD/requirements-dev.txt
       - name: Run field application tests
         working-directory: SHADOWLINK-FIELD
         run: python -m pytest tests -o addopts=-ra -q
@@ -94,10 +96,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: Final-Project/SHADOWLINK-FIELD/requirements-dev.txt
       - name: Install field application and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
+          python -m pip install -r Final-Project/SHADOWLINK-FIELD/requirements-dev.txt
       - name: Run nested-copy tests
         working-directory: Final-Project/SHADOWLINK-FIELD
         run: python -m pytest tests -o addopts=-ra -q

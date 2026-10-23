@@ -75,6 +75,8 @@
 
 ## Phase 2 — Migrate or remove the nested mirror (separate reviewed change)
 
+**Remote static scan status:** complete. The branch scanner examined 636 text/config files outside the nested mirror and found no pre-existing application-code/config references to the nested path; the only code/config matches are the new CI workflow's deliberate nested-copy tests. This makes a separate cleanup PR reasonable after a local checkpoint, not safe to delete blindly.
+
 ### Work
 - Search all launch scripts, Python imports, frontend commands, tests, docs, workflows and relative paths for both field roots.
 - Determine whether the nested directory is still required by packaging, import resolution or a compatibility consumer.

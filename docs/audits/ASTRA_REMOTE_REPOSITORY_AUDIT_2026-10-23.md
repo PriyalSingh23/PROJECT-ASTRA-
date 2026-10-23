@@ -145,3 +145,15 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 - No radio was armed or operated.
 - No physical range, BER, FER, latency, or jamming-resilience result is inferred from software simulation.
 - Do not merge this plan or delete duplicate source paths without reviewing it alongside the current local agent's changes.
+
+
+### F9 — Static path-reference scan supports, but does not authorize, mirror removal
+
+The review-branch inventory artifact reports:
+- 636 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
+- 8 direct literal path matches total: 6 documentation lines and 2 code/config lines
+- Both code/config matches are in the newly added `.github/workflows/astra-baseline.yml`, where the nested copy is intentionally tested
+- The six documentation matches are in this audit and the reintegration plan; no pre-existing application source/config/launcher match was found in the scanned pushed tree
+- 130 of 130 relative entries match across the two copies
+
+This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
