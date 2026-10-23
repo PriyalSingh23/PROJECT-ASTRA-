@@ -8,6 +8,7 @@ on:
       - ".github/workflows/**"
       - "AGENTS.md"
       - "scripts/astra_baseline_audit.py"
+      - "tests/**"
       - "Final-Project/*.py"
       - "Final-Project/**/*.py"
       - "Final-Project/*.grc"
@@ -77,6 +78,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  baseline-tool-tests:
+    name: Baseline audit tool unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test read-only inventory and path audit
+        run: python -m unittest discover -s tests -p "test_astra_baseline_audit.py" -v
+
   baseline-inventory:
     name: Repository inventory and duplicate-tree manifest
     runs-on: ubuntu-latest

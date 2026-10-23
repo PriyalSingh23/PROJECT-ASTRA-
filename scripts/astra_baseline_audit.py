@@ -188,6 +188,11 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
     matches: list[dict[str, Any]] = []
     max_matches = 500
     nested_prefix = "Final-Project/SHADOWLINK-FIELD/"
+    try:
+        scanner_relative_path: str | None = Path(__file__).resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        # The script can audit another checkout via --repo-root.
+        scanner_relative_path = None
 
     for current, dirs, files in os.walk(root, followlinks=False):
         current_path = Path(current)
@@ -202,7 +207,7 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
             path = current_path / name
             rel = path.relative_to(root).as_posix()
             if (rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD"
-                    or rel == Path(__file__).resolve().relative_to(root).as_posix()
+                    or (scanner_relative_path is not None and rel == scanner_relative_path)
                     or rel in REFERENCE_SCAN_EXCLUDED_PATHS):
                 continue
             if path.suffix.lower() not in TEXT_SUFFIXES or path.is_symlink() or not path.is_file():
