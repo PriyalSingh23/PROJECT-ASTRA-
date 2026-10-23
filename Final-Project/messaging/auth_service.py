@@ -173,23 +173,37 @@ class AuthService:
 
     @staticmethod
     def seed_default_users(session: Session):
-        """Seeds default administrator and field operator if users table is empty."""
+        """Seeds demo users only outside production; production must avoid known defaults."""
         count = session.query(User).count()
-        if count == 0:
-            admin_pw = get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
-            operator_pw = get_seed_password("SHADOWCOMM_OPERATOR_PASSWORD", DEMO_OPERATOR_PASSWORD)
-            
-            admin = User(username="admin", role="ADMINISTRATOR")
-            admin.set_password(admin_pw)
-            session.add(admin)
+        if count:
+            if os.environ.get("SHADOWCOMM_ENV", "development").strip().lower() in {"prod", "production"}:
+                legacy_credentials = (
+                    ("admin", DEMO_ADMIN_PASSWORD),
+                    ("operator", DEMO_OPERATOR_PASSWORD),
+                )
+                for username, demo_password in legacy_credentials:
+                    user = session.query(User).filter_by(username=username).first()
+                    if user and user.check_password(demo_password):
+                        raise RuntimeError(
+                            f"User '{username}' still uses a known demo password. "
+                            "Rotate that account password before production startup."
+                        )
+            return
 
-            operator = User(username="operator", role="OPERATOR")
-            operator.set_password(operator_pw)
-            session.add(operator)
+        admin_pw = get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
+        operator_pw = get_seed_password("SHADOWCOMM_OPERATOR_PASSWORD", DEMO_OPERATOR_PASSWORD)
 
-            audit = SecurityAuditLog(
-                event_type="SYSTEM_INITIAL_USERS_SEEDED",
-                details={"seeded_users": ["admin", "operator"]},
-            )
-            session.add(audit)
-            session.commit()
+        admin = User(username="admin", role="ADMINISTRATOR")
+        admin.set_password(admin_pw)
+        session.add(admin)
+
+        operator = User(username="operator", role="OPERATOR")
+        operator.set_password(operator_pw)
+        session.add(operator)
+
+        audit = SecurityAuditLog(
+            event_type="SYSTEM_INITIAL_USERS_SEEDED",
+            details={"seeded_users": ["admin", "operator"]},
+        )
+        session.add(audit)
+        session.commit()
