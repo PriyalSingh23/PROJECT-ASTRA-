@@ -89,5 +89,27 @@ class BaselineAuditTests(unittest.TestCase):
             self.assertEqual(result["code_or_config_match_count"], 1)
 
 
+    def test_path_scan_classifies_ci_and_test_literals_separately(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows"
+            tests = root / "tests"
+            workflow.mkdir(parents=True)
+            tests.mkdir(parents=True)
+            token = "Final-Project/SHADOWLINK-FIELD"
+            (workflow / "ci.yml").write_text(
+                f'working-directory: {token}\\n', encoding="utf-8"
+            )
+            (tests / "test_fixture.py").write_text(
+                f'TOKEN = "{token}"\\n', encoding="utf-8"
+            )
+
+            result = AUDIT.path_reference_audit(root)
+            self.assertEqual(result["ci_config_match_count"], 1)
+            self.assertEqual(result["test_fixture_match_count"], 1)
+            self.assertEqual(result["code_or_config_match_count"], 0)
+            self.assertEqual(result["documentation_match_count"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
