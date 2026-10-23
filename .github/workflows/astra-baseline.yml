@@ -1,0 +1,100 @@
+name: ASTRA baseline
+
+on:
+  push:
+    branches:
+      - main
+      - codex/astra-gsd-audit-2026-10-23
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: astra-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lpi-research-tests:
+    name: Final-Project Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install research and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy flask flask-socketio pycryptodome reedsolo requests sqlalchemy pytest pyyaml h5py cryptography matplotlib scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Run research/application tests
+        working-directory: Final-Project
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: python -m pytest tests -q
+
+  field-root-tests:
+    name: Root SHADOWLINK-FIELD Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install field application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
+      - name: Run field application tests
+        working-directory: SHADOWLINK-FIELD
+        run: python -m pytest tests -q
+
+  field-nested-context-tests:
+    name: Nested SHADOWLINK-FIELD path-context tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install field application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
+      - name: Run nested-copy tests
+        working-directory: Final-Project/SHADOWLINK-FIELD
+        run: python -m pytest tests -q
+
+  frontend-builds:
+    name: Frontend production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project_dir:
+          - Final-Project/frontend
+          - SHADOWLINK-FIELD/frontend
+          - Final-Project/SHADOWLINK-FIELD/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ${{ matrix.project_dir }}/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: ${{ matrix.project_dir }}
+        run: npm ci
+      - name: Build frontend
+        working-directory: ${{ matrix.project_dir }}
+        run: npm run build
