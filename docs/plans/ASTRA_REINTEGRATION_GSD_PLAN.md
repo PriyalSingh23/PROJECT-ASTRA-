@@ -97,7 +97,8 @@ The repository-root `.github/workflows/astra-baseline.yml` is now in place. It h
 - The workflow now installs from exact-version manifests: `Final-Project/requirements-ci.txt`, `SHADOWLINK-FIELD/requirements.txt` plus `requirements-dev.txt`, and matching field manifests under the nested mirror. All were exercised in the successful run above.
 - Track TorchScript/tracer, Starlette/httpx, and Pydantic deprecations as follow-up maintenance.
 - Hardware-dependent tests are not run by these jobs and must stay reported as unavailable until a supported, authorized device test is performed.
-- Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline workflow does not yet reproduce the separate 6-epoch metric gate. The `tests/**` pull-request path filter is being corrected in this review branch before considering CI trigger coverage complete.
+- The root workflow now includes an `lpi-v4-metric-gate` job: deterministic six-epoch CPU training, evaluation, and explicit checks for `ber_field<1%` plus `capture_decodes`. The short-run gate intentionally does not fail on stealth/adversary metrics that are unstable at this training budget. Its CI result is pending in this review branch. The synthesized-capture check covers codec/framing, not a physical radio.
+- The `tests/**` pull-request path filter is fixed on `main`.
 
 ## Phase 4 — Offline message reliability
 
