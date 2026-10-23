@@ -149,14 +149,13 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 
 ### F9 — Static path-reference scan supports, but does not authorize, mirror removal
 
-The latest review-branch inventory artifact (after adding matching dependency manifests) reports:
-- 639 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
-- 13 direct literal path matches total: 7 documentation lines and 6 code/config lines
-- All six code/config matches are in the new `.github/workflows/astra-baseline.yml`, where the nested copy is intentionally tested for path-context compatibility
-- The seven documentation matches are in this audit and the reintegration plan; no pre-existing application source/config/launcher match was found in the scanned pushed tree
+The latest review-branch inventory artifact (after adding matching dependency manifests) uses a static text/config scan that excludes this audit and its plan document to avoid self-referential counts. It reports:
+- 637 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
+- 6 direct literal path matches; all six are in the new `.github/workflows/astra-baseline.yml`, where the nested copy is intentionally tested for path-context compatibility
+- No direct path match was found in the other scanned application source, launcher, configuration, or documentation files
 - The field trees now contain 132 entries each; all 132 relative entries match
 
-At the original audited `main` commit, each field tree had 130 entries; the two newly added requirements manifests raised that to 132 while preserving identical contents.
+At the original audited `main` commit, each field tree had 130 entries; the two new requirements manifests raised that to 132 while preserving identical contents.
 
 This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
 

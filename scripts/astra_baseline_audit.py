@@ -168,6 +168,10 @@ TEXT_SUFFIXES = {
     ".ts", ".tsx", ".js", ".jsx", ".css", ".sql", ".service", ".grc",
 }
 REFERENCE_SCAN_MAX_BYTES = 2 * 1024 * 1024
+REFERENCE_SCAN_EXCLUDED_PATHS = {
+    "docs/audits/ASTRA_REMOTE_REPOSITORY_AUDIT_2026-10-23.md",
+    "docs/plans/ASTRA_REINTEGRATION_GSD_PLAN.md",
+}
 
 
 def path_reference_audit(root: Path) -> dict[str, Any]:
@@ -197,7 +201,9 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
         for name in sorted(files):
             path = current_path / name
             rel = path.relative_to(root).as_posix()
-            if rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD" or rel == Path(__file__).resolve().relative_to(root).as_posix():
+            if (rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD"
+                    or rel == Path(__file__).resolve().relative_to(root).as_posix()
+                    or rel in REFERENCE_SCAN_EXCLUDED_PATHS):
                 continue
             if path.suffix.lower() not in TEXT_SUFFIXES or path.is_symlink() or not path.is_file():
                 continue
@@ -222,6 +228,7 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
 
     return {
         "token": token,
+        "excluded_reference_documents": sorted(REFERENCE_SCAN_EXCLUDED_PATHS),
         "files_scanned": files_scanned,
         "large_files_skipped": large_files_skipped,
         "unreadable_files_skipped": unreadable_files_skipped,
