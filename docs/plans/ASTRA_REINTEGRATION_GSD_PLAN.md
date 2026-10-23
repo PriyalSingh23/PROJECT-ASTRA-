@@ -1,6 +1,6 @@
 # ASTRA reintegration plan — first baseline phase and staged follow-up
 
-**Purpose:** establish a reproducible baseline and explicitly assign source ownership before application code or model weights are changed. This is a proposed GSD plan, not a claim that ASTRA's test suites have already run.
+**Purpose:** establish a reproducible baseline and explicitly assign source ownership before application code or model weights are changed. This is a proposed staged GSD plan; the pushed-source Linux CI baseline now passes, while the local Mac/uncommitted-worktree baseline and GSD reconciliation remain pending.
 
 ## Guardrails
 
@@ -38,7 +38,7 @@
 
 4. Confirm the actual developer environment used by the active agent and record its uncommitted changes separately. The pushed GitHub commit is not a substitute for local workspace state.
 5. Confirm these two facts independently: (a) the source trees match by path/content hash; (b) deployment and import references indicate which root is intended for each application.
-6. Record the existing nested LPI workflow issue: `Final-Project/.github/workflows/ci.yml` is not in repository-root `.github/workflows/`, so GitHub Actions does not discover it as a repository workflow. The current GitHub Actions API showed zero workflow runs. Treat earlier test counts as historical claims until rerun.
+6. Record the original nested LPI workflow issue: `Final-Project/.github/workflows/ci.yml` is not in repository-root `.github/workflows/`, so GitHub Actions does not discover it as a repository workflow. The repository-root review-branch workflow now provides the pushed-source baseline; its latest completed run is recorded in Phase 3. Earlier test counts remain historical unless they name a test root, commit/run, and environment.
 7. After evidence is collected, update GSD state, roadmap and codebase maps so they all report the same verified status.
 
 ### Acceptance criteria
@@ -90,14 +90,14 @@
 
 ## Phase 3 — Verify and harden repository-root CI
 
-An initial `.github/workflows/astra-baseline.yml` has been added on this review branch. It attempts four parallel gates: the Final-Project Python tests, root SHADOWLINK-FIELD Python tests, nested-copy path-context tests, and production builds for all three frontends.
+The repository-root `.github/workflows/astra-baseline.yml` is now in place. It has separate jobs for baseline-tool unit tests, inventory/artifact generation, the `Final-Project` Python tests, root and nested field-app test contexts, and production builds for all three frontends.
 
-**Status: initial baseline passed in GitHub Actions** on 2026-10-23 (review-branch run; see the [workflow result](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39944874537)). Results: `Final-Project` 387 passed; root and nested field-app tests 26 passed each; all three frontend builds passed; inventory manifest found 130/130 matching relative entries. The research suite took 277.27 seconds and emitted five warnings; the field suites each emitted five deprecation warnings. This proves the pushed CI checkout only, not the local Mac checkout, uncommitted agent changes, or radio hardware.
+**Latest verified status before the final path-filter fix:** [run #39951110358](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358), commit `deec42bfca837d5f79ee95df34c99fe13c16352c`, completed all eight jobs successfully on 2026-10-23: baseline-tool tests 5 passed; `Final-Project` 387 passed (5 warnings, 271.36 s); root field app 26 passed (5 warnings, 4.46 s); nested field context 26 passed (5 warnings, 4.35 s); all three frontend builds passed; inventory comparison reported 132 entries per field tree, 132 matching and zero differences. This proves the pushed Linux checkout only—not the local Mac checkout, uncommitted agent changes, or radio hardware. The count rose from 130 to 132 after pinned requirements files were added to both field trees.
 
-- Keep explicit dependency setup for now; after this baseline, move it into maintained manifests in a dedicated change and pin compatible versions.
+- The workflow now installs from exact-version manifests: `Final-Project/requirements-ci.txt`, `SHADOWLINK-FIELD/requirements.txt` plus `requirements-dev.txt`, and matching field manifests under the nested mirror. All were exercised in the successful run above.
 - Track TorchScript/tracer, Starlette/httpx, and Pydantic deprecations as follow-up maintenance.
 - Hardware-dependent tests are not run by these jobs and must stay reported as unavailable until a supported, authorized device test is performed.
-- Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline job here does not yet reproduce the separate 6-epoch metric gate.
+- Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline workflow does not yet reproduce the separate 6-epoch metric gate. The `tests/**` pull-request path filter is being corrected in this review branch before considering CI trigger coverage complete.
 
 ## Phase 4 — Offline message reliability
 
