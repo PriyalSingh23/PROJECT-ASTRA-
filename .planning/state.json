@@ -11,23 +11,23 @@
     {
       "number": "7",
       "name": "Post-Quantum Hybrid Cryptography (ML-KEM / Kyber + AES-256-GCM)",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "8",
       "name": "Multi-Hop Ad-Hoc Mesh Routing & Relay Protocol",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "9",
       "name": "Advanced RF Field Tools, Live Waterfall & Diagnostic Bench",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd-progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd-new-milestone",
+    "label": "Start ASTRA reintegration milestone",
+    "reason": "Root ROADMAP and STATE mark v2.0 phases 6–9 complete. After the active local agent reaches a stable checkpoint, initialize the next milestone for repo-wide baseline reconciliation, source ownership and field acceptance."
   },
-  "updated_at": "2026-10-20T09:59:52.190Z"
+  "updated_at": "2026-10-23T12:22:00.000Z"
 }
