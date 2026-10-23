@@ -20,7 +20,7 @@ This report documents the security audit conducted on the legacy and messaging s
 | Vulnerability ID | Description | Historical Location | Severity | Current Status |
 |---|---|---|---|---|
 | **SEC-01** | Hardcoded AES-128 Encryption Key (`0123456789abcdef`) | `app.py:27`, `index.html:357`, `lpi_v4/lpi_crypto.py:242` | **HIGH** | **REMEDIATED** in active code; env variable overrides enabled. |
-| **SEC-02** | Hardcoded Flask Session Secret (`shadowcomm-secret-key`) | `app.py:15`, `messaging/server.py:13` | **MEDIUM** | **REMEDIATED**; reads from `SHADOWCOMM_SECRET_KEY` with dev fallback warning. |
+| **SEC-02** | Hardcoded Flask session secret (`shadowcomm-secret-key`) | `app.py`, `messaging/server.py`, `messaging/ack_manager.py` | **MEDIUM** | Production-mode fail-closed guard added in the security branch; local-development fallback remains explicit and warns. Pending CI until the branch passes. |
 | **SEC-03** | Permissive Wildcard CORS (`cors_allowed_origins="*"`) | `app.py:16` | **MEDIUM** | **REMEDIATED**; restricted to explicit origin list from `SHADOWCOMM_CORS_ORIGINS`. |
 | **SEC-04** | Static Zero-Counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py:48`, `test_metrics.py:301` | **HIGH** | **DOCUMENTED**; keystream reuse vulnerability identified; pilot isolated. |
 | **SEC-05** | Unauthenticated API Message Ingestion | `messaging/api.py:48` | **HIGH** | **REMEDIATED**; added `verify_auth` endpoint and `X-Endpoint-Token` validation. |
@@ -94,6 +94,22 @@ cipher = AES.new(self.key, AES.MODE_CTR, counter=ctr)
 - **Pilot Roadmap**: The reliable messaging subsystem (`messaging/`) currently operates with cleartext/simulated envelopes for deterministic verification, bypassing this vulnerable path. For production, AES-256-GCM with a 96-bit random nonce per message must replace legacy AES-CTR.
 
 ---
+
+### 4.4 Production fail-closed configuration guard (ASTRA follow-up)
+
+The security branch `codex/astra-secret-config-guard-2026-10-23` adds an explicit production mode. **Set `SHADOWCOMM_ENV=production` deliberately**; the default remains `development` for backward-compatible local simulations, so merely omitting the setting does not activate these production checks.
+
+When production mode is enabled:
+
+- `messaging.server` requires a non-placeholder `SHADOWCOMM_SECRET_KEY` of at least 32 characters and sets secure, HttpOnly, SameSite=Lax session-cookie options.
+- Receipt HMAC generation uses the same validated application secret rather than its own predictable fallback.
+- Both endpoint tokens must be configured as unique values of at least 32 characters. If an existing database holds a different token, startup stops and requires explicit credential rotation; the application does not silently rewrite the stored database token.
+- A fresh database requires separately configured initial administrator/operator passwords of at least 16 characters. Existing users with the known demo passwords `AdminPass@2026!` or `OperatorPass@2026!` prevent production startup until they are rotated.
+- The standalone research prototype `Final-Project/app.py` is blocked entirely in production because its legacy AES-CTR implementation resets the counter for each message. This does not repair the prototype's cryptography; it makes the restriction enforceable when the production mode is correctly set.
+
+The guard checks minimum lengths and obvious placeholder/default values, not entropy or a full deployment's security posture. Generate credentials with a cryptographically secure source, rotate any historical/pilot secrets, protect the database and keyring files, and use authenticated transport. This branch makes no automatic database migration or token rotation.
+
+**Validation status:** the production guard, tests, template, and documentation are under review; do not claim the guard is merged or CI-validated until the pull-request workflow succeeds.
 
 ## 5. Security Checklist for Field Pilot Deployment
 
