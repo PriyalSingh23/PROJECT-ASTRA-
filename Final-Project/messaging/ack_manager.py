@@ -9,6 +9,7 @@ from messaging.models import (
     utcnow,
 )
 from messaging.state_machine import MessageState, validate_transition
+from messaging.security_config import get_app_secret_key
 
 
 class AckManager:
@@ -129,8 +130,9 @@ class AckManager:
     @classmethod
     def generate_receipt_signature(cls, ack: Acknowledgement, message: Message) -> str:
         """Generates a verifiable cryptographic HMAC delivery receipt signature."""
-        import hmac, hashlib, os
-        secret = os.environ.get("SHADOWCOMM_SECRET_KEY", "shadowcomm-dev-secret-key-offline-demo").encode()
+        import hmac
+        import hashlib
+        secret = get_app_secret_key().encode("utf-8")
         data = f"{ack.ack_id}:{message.message_id}:{message.recipient_endpoint_id}:{message.client_idempotency_key}".encode()
         sig = hmac.new(secret, data, hashlib.sha256).hexdigest()[:16]
         return f"ACK-SIG:{ack.ack_id[:8]}:{sig}"

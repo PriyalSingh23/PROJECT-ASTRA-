@@ -5,6 +5,7 @@ from flask import Flask, render_template, send_from_directory, request
 from messaging.api import api_v1
 from messaging.db import init_db, get_db_session, DEFAULT_DB_PATH
 from messaging.retry_policy import RetryPolicy
+from messaging.security_config import get_app_secret_key, is_production
 
 TEMPLATE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
 STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
@@ -20,7 +21,11 @@ def create_app(
 ) -> Flask:
     """Factory creating the Flask application for SHADOWCOMM Reliable Messaging & Research Platform."""
     app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
-    app.config["SECRET_KEY"] = os.environ.get("SHADOWCOMM_SECRET_KEY", "shadowcomm-dev-secret-key-offline-demo")
+    app.config["SECRET_KEY"] = get_app_secret_key()
+    if is_production():
+        app.config["SESSION_COOKIE_SECURE"] = True
+        app.config["SESSION_COOKIE_HTTPONLY"] = True
+        app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
     effective_db_path = db_path or DEFAULT_DB_PATH
     app.config["DB_PATH"] = effective_db_path

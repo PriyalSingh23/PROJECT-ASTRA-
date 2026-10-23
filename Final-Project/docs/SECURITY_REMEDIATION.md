@@ -20,11 +20,12 @@ This report documents the security audit conducted on the legacy and messaging s
 | Vulnerability ID | Description | Historical Location | Severity | Current Status |
 |---|---|---|---|---|
 | **SEC-01** | Hardcoded AES-128 Encryption Key (`0123456789abcdef`) | `app.py:27`, `index.html:357`, `lpi_v4/lpi_crypto.py:242` | **HIGH** | **REMEDIATED** in active code; env variable overrides enabled. |
-| **SEC-02** | Hardcoded Flask Session Secret (`shadowcomm-secret-key`) | `app.py:15`, `messaging/server.py:13` | **MEDIUM** | **REMEDIATED**; reads from `SHADOWCOMM_SECRET_KEY` with dev fallback warning. |
+| **SEC-02** | Hardcoded Flask session secret (`shadowcomm-secret-key`) | `app.py`, `messaging/server.py`, `messaging/ack_manager.py` | **MEDIUM** | Production-mode fail-closed guard added in the security branch; local-development fallback remains explicit and warns. Pending CI until the branch passes. |
 | **SEC-03** | Permissive Wildcard CORS (`cors_allowed_origins="*"`) | `app.py:16` | **MEDIUM** | **REMEDIATED**; restricted to explicit origin list from `SHADOWCOMM_CORS_ORIGINS`. |
-| **SEC-04** | Static Zero-Counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py:48`, `test_metrics.py:301` | **HIGH** | **DOCUMENTED**; keystream reuse vulnerability identified; pilot isolated. |
-| **SEC-05** | Unauthenticated API Message Ingestion | `messaging/api.py:48` | **HIGH** | **REMEDIATED**; added `verify_auth` endpoint and `X-Endpoint-Token` validation. |
-| **SEC-06** | Plaintext Payload Logging / Event Leakage | `messaging/models.py:185` | **LOW** | **REMEDIATED**; `to_dict()` sanitizes audit metadata. |
+| **SEC-04** | Static zero-counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py`, legacy tests | **HIGH** | Fixed-counter design remains unsafe; the standalone prototype is blocked when `SHADOWCOMM_ENV=production`, but its crypto is not repaired. |
+| **SEC-05** | Unauthenticated API message ingestion | `messaging/api.py` | **HIGH** | Production mode now forces sender-token validation even when the legacy opt-in flag is absent; development retains the opt-in behavior. Automated regression test added. |
+| **SEC-06** | Plaintext payload logging / event leakage | `messaging/models.py:185` | **LOW** | **REMEDIATED**; `to_dict()` sanitizes audit metadata. |
+| **SEC-07** | Predictable seeded endpoint tokens and default account passwords | `messaging/db.py`, `messaging/auth_service.py` | **HIGH** | Production startup guard added on the security branch; missing/weak credentials, mismatched stored tokens, or documented demo passwords block startup. Pending CI. |
 
 ---
 
@@ -44,7 +45,7 @@ $ git log -S "shadowcomm-secret-key" --oneline
 ### Remediation Protocol for Exposed Historical Secrets
 1. **Compromised Status**: The key `0123456789abcdef` and secret `shadowcomm-secret-key` are permanently untrusted and must never be used in production or field environments.
 2. **No Destructive Rewriting**: Because force-pushing (`git push --force`) or rewriting repository history breaks collaborator workflows and risks data loss, the historical commits are preserved.
-3. **Environment Isolation**: The runtime code has been modified to prioritize environment variables. If `SHADOWCOMM_AES_KEY` or `SHADOWCOMM_SECRET_KEY` are not explicitly defined, the system logs a high-visibility security warning:
+3. **Environment Isolation**: Development mode preserves demo fallbacks for local simulations and logs a high-visibility security warning. The follow-up production guard requires `SHADOWCOMM_ENV=production` explicitly and fails closed for missing, weak, or placeholder session secrets and endpoint credentials:
    ```
    [SECURITY WARNING] Insecure or default AES key in use. Rotate SHADOWCOMM_AES_KEY before production/pilot.
    [SECURITY WARNING] 'SHADOWCOMM_SECRET_KEY' environment variable not set. Using dev fallback.
@@ -55,26 +56,20 @@ $ git log -S "shadowcomm-secret-key" --oneline
 
 ## 4. Remediation Actions Implemented
 
-### 4.1. Validated Environment Configuration
-In [`app.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/app.py#L14-L35):
-```python
-_env_secret = os.environ.get("SHADOWCOMM_SECRET_KEY")
-if not _env_secret:
-    print("[SECURITY WARNING] 'SHADOWCOMM_SECRET_KEY' environment variable not set. Using dev fallback.")
-    _env_secret = "dev-insecure-shadowcomm-secret-key"
+### 4.1. Runtime secret configuration and production mode
 
-_env_cors = os.environ.get("SHADOWCOMM_CORS_ORIGINS", "http://127.0.0.1:5000,http://localhost:5000,http://127.0.0.1:5050,http://localhost:5050")
-_cors_origins = [o.strip() for o in _env_cors.split(",") if o.strip()]
+The current implementation centralizes secret resolution in `messaging/security_config.py`. **Set `SHADOWCOMM_ENV=production` explicitly** on production deployment. The default remains `development` so local demo/test behavior is backward compatible; the production guard is not activated merely by omitting the variable.
 
-_env_aes_key = os.environ.get("SHADOWCOMM_AES_KEY")
-if not _env_aes_key or _env_aes_key == "0123456789abcdef":
-    print("[SECURITY WARNING] Insecure or default AES key in use. Rotate SHADOWCOMM_AES_KEY before production/pilot.")
-    _env_aes_key = "0123456789abcdef"
+When production mode is enabled:
+- `SHADOWCOMM_SECRET_KEY` must be a unique, non-placeholder value of at least 32 characters. Flask session signing and acknowledgement-receipt HMAC use the same validated value.
+- Message-ingestion routes require the sender endpoint token whenever production mode is active—even if the older `SHADOWCOMM_REQUIRE_AUTH` opt-in flag is missing or set to false. In development, the legacy opt-in setting still controls the previous behavior.
+- `SHADOWCOMM_TOKEN_ENDPOINT_A` and `SHADOWCOMM_TOKEN_ENDPOINT_B` must be unique, non-placeholder values of at least 32 characters.
+- A new database requires `SHADOWCOMM_ADMIN_PASSWORD` and `SHADOWCOMM_OPERATOR_PASSWORD`, each at least 16 characters; existing admin/operator/viewer accounts with documented demo defaults block startup.
+- If an existing database's stored endpoint token differs from the configured production token, startup fails and requires explicit credential rotation. The application does not silently rotate a stored credential.
+- Flask session cookies are set Secure, HttpOnly and SameSite=Lax in production mode.
+- The standalone `Final-Project/app.py` research prototype is blocked in production because its legacy AES-CTR implementation starts each encryption at the same counter. This prevents that component from being selected in production; it **does not repair the AES-CTR cryptographic design**.
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = _env_secret
-socketio = SocketIO(app, cors_allowed_origins=_cors_origins)
-```
+The guard checks minimum lengths, known demo values and obvious placeholders. It cannot estimate secret entropy or replace a threat-model/security review. Generate fresh secrets from a cryptographically secure random source, protect them from logs/version control, use authenticated transport, and rotate any historically exposed credentials. Do not reuse the demonstration tokens/passwords below for any field deployment.
 
 ### 4.2. Independent Device Authentication (`X-Endpoint-Token`)
 In [`messaging/models.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/messaging/models.py#L28-L48) and [`messaging/api.py`](file:///Users/sabhay/Downloads/PROJECT%2013OCT/Final-Project/messaging/api.py#L47-L95):
@@ -95,6 +90,22 @@ cipher = AES.new(self.key, AES.MODE_CTR, counter=ctr)
 
 ---
 
+### 4.4 Production fail-closed configuration guard (ASTRA follow-up)
+
+The security branch `codex/astra-secret-config-guard-2026-10-23` adds an explicit production mode. **Set `SHADOWCOMM_ENV=production` deliberately**; the default remains `development` for backward-compatible local simulations, so merely omitting the setting does not activate these production checks.
+
+When production mode is enabled:
+
+- `messaging.server` requires a non-placeholder `SHADOWCOMM_SECRET_KEY` of at least 32 characters and sets secure, HttpOnly, SameSite=Lax session-cookie options.
+- Receipt HMAC generation uses the same validated application secret rather than its own predictable fallback.
+- Both endpoint tokens must be configured as unique values of at least 32 characters. If an existing database holds a different token, startup stops and requires explicit credential rotation; the application does not silently rewrite the stored database token.
+- A fresh database requires separately configured initial administrator/operator passwords of at least 16 characters. Existing users with the known demo passwords `AdminPass@2026!` or `OperatorPass@2026!` prevent production startup until they are rotated.
+- The standalone research prototype `Final-Project/app.py` is blocked entirely in production because its legacy AES-CTR implementation resets the counter for each message. This does not repair the prototype's cryptography; it makes the restriction enforceable when the production mode is correctly set.
+
+The guard checks minimum lengths and obvious placeholder/default values, not entropy or a full deployment's security posture. Generate credentials with a cryptographically secure source, rotate any historical/pilot secrets, protect the database and keyring files, and use authenticated transport. This branch makes no automatic database migration or token rotation.
+
+**Validation status:** the production guard, tests, template, and documentation are under review; do not claim the guard is merged or CI-validated until the pull-request workflow succeeds.
+
 ## 5. Security Checklist for Field Pilot Deployment
 
 Before conducting the two-device local network pilot:
@@ -107,10 +118,15 @@ Before conducting the two-device local network pilot:
 - [ ] Assign distinct device tokens for Endpoint A and Endpoint B.
 - [ ] Export environment variables:
   ```bash
+  export SHADOWCOMM_ENV=production
+  export SHADOWCOMM_ENV=production
   export SHADOWCOMM_REQUIRE_AUTH=true
-  export SHADOWCOMM_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-  export SHADOWCOMM_TOKEN_ENDPOINT_A="token-pilot-alpha-94e82b"
-  export SHADOWCOMM_TOKEN_ENDPOINT_B="token-pilot-bravo-31a7c4"
+  export SHADOWCOMM_SECRET_KEY="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_TOKEN_ENDPOINT_A="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_TOKEN_ENDPOINT_B="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_ADMIN_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  export SHADOWCOMM_OPERATOR_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  # Existing DBs require explicit endpoint-token/password rotation before production startup.
   ```
 - [ ] Ensure the pilot runs on a protected WPA2/WPA3 local Wi-Fi network without public internet exposure.
 

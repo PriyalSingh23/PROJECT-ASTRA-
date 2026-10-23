@@ -6,6 +6,7 @@ from messaging.models import Endpoint, Message, MessageEvent, DeliveryAttempt, A
 from messaging.service import MessagingService
 from messaging.transport import transport
 from messaging.retry_policy import RetryPolicy
+from messaging.security_config import endpoint_authentication_required
 from messaging.state_machine import MessageState, InvalidStateTransitionError
 
 api_v1 = Blueprint("messaging_api_v1", __name__, url_prefix="/api/v1")
@@ -617,9 +618,8 @@ def submit_message():
             "detail": f"Local node identity is '{local_station_id}'. Local drafts cannot author messages as remote station '{sender_endpoint_id}'."
         }), 403
 
-    # Sender Authentication Verification
-    import os
-    require_auth = os.environ.get("SHADOWCOMM_REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")
+    # Sender authentication is always required in explicit production mode.
+    require_auth = endpoint_authentication_required()
     token = (
         request.headers.get("X-Endpoint-Token")
         or (request.headers.get("Authorization") or "").replace("Bearer ", "").strip()

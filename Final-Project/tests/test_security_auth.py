@@ -4,6 +4,17 @@ from datetime import datetime, timezone, timedelta
 from messaging.db import init_db, get_db_session
 from messaging.models import User, UserSession, SecurityAuditLog
 from messaging.auth_service import AuthService
+from messaging.security_config import (
+    DEMO_ADMIN_PASSWORD,
+    DEMO_OPERATOR_PASSWORD,
+    DEMO_SECRET_KEY,
+    DEMO_TOKEN_ENDPOINT_A,
+    DEMO_TOKEN_ENDPOINT_B,
+    ensure_legacy_component_not_production,
+    get_app_secret_key,
+    get_endpoint_token,
+    get_seed_password,
+)
 from messaging.crypto_v2 import (
     encrypt_v2_gcm,
     decrypt_v2_gcm,
@@ -155,3 +166,140 @@ def test_security_audit_logging(auth_db):
         assert "USER_CREATED" in event_types
         assert "LOGIN_SUCCESS" in event_types
         assert "LOGIN_FAILED" in event_types
+
+
+
+# ==================== PRODUCTION SECRET CONFIGURATION ====================
+
+def test_production_mode_requires_a_configured_app_secret(monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.delenv("SHADOWCOMM_SECRET_KEY", raising=False)
+
+    with pytest.raises(RuntimeError, match="SHADOWCOMM_SECRET_KEY is required"):
+        get_app_secret_key()
+
+
+@pytest.mark.parametrize(
+    "secret",
+    [
+        DEMO_SECRET_KEY,
+        "generate_a_random_32_byte_hex_string_here",
+        "too-short",
+    ],
+)
+def test_production_mode_rejects_demo_placeholder_and_short_secrets(monkeypatch, secret):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.setenv("SHADOWCOMM_SECRET_KEY", secret)
+
+    with pytest.raises(RuntimeError):
+        get_app_secret_key()
+
+
+def test_production_mode_accepts_a_long_unique_app_secret(monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.setenv("SHADOWCOMM_SECRET_KEY", "unique-runtime-secret-" + ("a7" * 24))
+
+    assert len(get_app_secret_key()) >= 32
+
+
+def test_production_mode_requires_configured_endpoint_tokens(monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.delenv("SHADOWCOMM_TOKEN_ENDPOINT_A", raising=False)
+
+    with pytest.raises(RuntimeError, match="SHADOWCOMM_TOKEN_ENDPOINT_A is required"):
+        get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_A", DEMO_TOKEN_ENDPOINT_A)
+
+    monkeypatch.setenv("SHADOWCOMM_TOKEN_ENDPOINT_A", "replace_with_a_real_token")
+    with pytest.raises(RuntimeError):
+        get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_A", DEMO_TOKEN_ENDPOINT_A)
+
+    monkeypatch.setenv("SHADOWCOMM_TOKEN_ENDPOINT_A", "e4" * 32)
+    assert len(get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_A", DEMO_TOKEN_ENDPOINT_A)) == 64
+
+
+def test_production_mode_requires_initial_passwords_for_a_new_database(monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.delenv("SHADOWCOMM_ADMIN_PASSWORD", raising=False)
+
+    with pytest.raises(RuntimeError, match="SHADOWCOMM_ADMIN_PASSWORD is required"):
+        get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
+
+    monkeypatch.setenv("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
+    with pytest.raises(RuntimeError):
+        get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
+
+    monkeypatch.setenv("SHADOWCOMM_ADMIN_PASSWORD", "field-admin-" + ("G7" * 16))
+    assert len(get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)) >= 16
+
+
+def test_known_demo_users_block_production_startup(auth_db, monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+
+    with get_db_session(auth_db) as session:
+        with pytest.raises(RuntimeError, match="known demo password"):
+            AuthService.seed_default_users(session)
+
+
+def test_existing_endpoint_demo_tokens_block_production_startup(auth_db, monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.setenv("SHADOWCOMM_TOKEN_ENDPOINT_A", "A9" * 32)
+    monkeypatch.setenv("SHADOWCOMM_TOKEN_ENDPOINT_B", "B8" * 32)
+
+    # Existing test DB contains the old development tokens; production startup
+    # must require an explicit credential rotation rather than silently changing DB state.
+    with pytest.raises(RuntimeError, match="Stored endpoint-a token does not match"):
+        init_db(auth_db)
+
+
+def test_legacy_fixed_counter_lpi_app_is_blocked_in_production(monkeypatch):
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+
+    with pytest.raises(RuntimeError, match="fixed initial counter"):
+        ensure_legacy_component_not_production(
+            "Final-Project/app.py",
+            "legacy AES-CTR uses a fixed initial counter",
+        )
+
+
+def test_development_mode_fallback_remains_explicit_and_compatible(monkeypatch, caplog):
+    import logging
+    import messaging.security_config as security_config
+
+    monkeypatch.delenv("SHADOWCOMM_ENV", raising=False)
+    monkeypatch.delenv("SHADOWCOMM_SECRET_KEY", raising=False)
+    monkeypatch.setattr(security_config, "_WARNED_NAMES", set())
+    caplog.set_level(logging.WARNING, logger="messaging.security_config")
+
+    assert get_app_secret_key() == DEMO_SECRET_KEY
+    assert any(
+        "SECURITY WARNING" in record.message and "SHADOWCOMM_SECRET_KEY" in record.message
+        for record in caplog.records
+    )
+
+
+
+def test_production_mode_forces_endpoint_authentication(monkeypatch):
+    from messaging.security_config import endpoint_authentication_required
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.delenv("SHADOWCOMM_REQUIRE_AUTH", raising=False)
+    assert endpoint_authentication_required() is True
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "development")
+    assert endpoint_authentication_required() is False
+
+    monkeypatch.setenv("SHADOWCOMM_REQUIRE_AUTH", "yes")
+    assert endpoint_authentication_required() is True
+
+
+def test_production_mode_rejects_shared_endpoint_tokens(monkeypatch):
+    from messaging.security_config import ensure_distinct_endpoint_tokens
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    with pytest.raises(RuntimeError, match="must be different in production"):
+        ensure_distinct_endpoint_tokens("A4" * 32, "A4" * 32)
+
+    ensure_distinct_endpoint_tokens("A4" * 32, "B5" * 32)
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "development")
+    ensure_distinct_endpoint_tokens("demo-token", "demo-token")

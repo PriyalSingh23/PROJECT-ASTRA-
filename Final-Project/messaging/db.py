@@ -4,6 +4,13 @@ from contextlib import contextmanager
 from typing import Optional
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
+from messaging.security_config import (
+    DEMO_TOKEN_ENDPOINT_A,
+    DEMO_TOKEN_ENDPOINT_B,
+    get_endpoint_token,
+    ensure_distinct_endpoint_tokens,
+    is_production,
+)
 from messaging.models import Base, Endpoint, SystemSetting, utcnow
 
 DEFAULT_DB_PATH = os.path.abspath(
@@ -134,7 +141,7 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
         # Seed Endpoint A
         from messaging.keyring import keyring_manager
         keyring_a = keyring_manager.load_or_generate_keyring("endpoint-a")
-        token_a = os.environ.get("SHADOWCOMM_TOKEN_ENDPOINT_A", "token-pilot-alpha-94e82b")
+        token_a = get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_A", DEMO_TOKEN_ENDPOINT_A)
         ep_a = session.query(Endpoint).filter_by(endpoint_id="endpoint-a").first()
         if not ep_a:
             ep_a = Endpoint(
@@ -153,6 +160,11 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
             )
             session.add(ep_a)
         else:
+            if is_production() and ep_a.auth_token != token_a:
+                raise RuntimeError(
+                    "Stored endpoint-a token does not match SHADOWCOMM_TOKEN_ENDPOINT_A. "
+                    "Perform an explicit credential rotation before production startup."
+                )
             if not ep_a.auth_token:
                 ep_a.auth_token = token_a
             if station_id:
@@ -165,7 +177,8 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
 
         # Seed Endpoint B
         keyring_b = keyring_manager.load_or_generate_keyring("endpoint-b")
-        token_b = os.environ.get("SHADOWCOMM_TOKEN_ENDPOINT_B", "token-pilot-bravo-31a7c4")
+        token_b = get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_B", DEMO_TOKEN_ENDPOINT_B)
+        ensure_distinct_endpoint_tokens(token_a, token_b)
         ep_b = session.query(Endpoint).filter_by(endpoint_id="endpoint-b").first()
         if not ep_b:
             ep_b = Endpoint(
@@ -184,6 +197,11 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
             )
             session.add(ep_b)
         else:
+            if is_production() and ep_b.auth_token != token_b:
+                raise RuntimeError(
+                    "Stored endpoint-b token does not match SHADOWCOMM_TOKEN_ENDPOINT_B. "
+                    "Perform an explicit credential rotation before production startup."
+                )
             if not ep_b.auth_token:
                 ep_b.auth_token = token_b
             if station_id:
