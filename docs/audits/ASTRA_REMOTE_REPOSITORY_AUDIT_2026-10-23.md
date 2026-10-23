@@ -79,7 +79,7 @@ At the audited `main` commit, the only workflow YAML was `Final-Project/.github/
 
 A root-level `.github/workflows/astra-baseline.yml` was added on the review branch. Its latest pull-request run completed successfully; exact test and build results appear in the next section. No workflow run existed at the original `main` baseline when first inspected, so historical counts should not be described as automated CI results.
 
-**Remaining work:** after the baseline is accepted, maintain explicit dependency manifests and review the warnings below. Hardware-only tests must remain unavailable rather than passed when hardware is absent.
+**Remaining work:** pinned dependency manifests and the cross-root baseline are now merged on `main`. The follow-up branch `codex/astra-lpi-metric-gate-2026-10-23` restores the former six-epoch LPI v4 receive-link check to the root workflow; it remains unverified until its branch CI passes. Review warnings below. Hardware-only tests must remain unavailable rather than passed when hardware is absent.
 
 ### F7 — Older repository concerns need revalidation, not blind application
 
@@ -143,11 +143,16 @@ Run: [ASTRA baseline #39951110358](https://github.com/PriyalSingh23/PROJECT-ASTR
 
 The inventory count rose from 130 to 132 after adding pinned runtime/development requirements files to both field trees; the two copies remain matching. Warnings remain maintenance items rather than test failures. This run validates the pushed Linux checkout only. The local Mac dirty-state/GSD baseline and physical hardware are not validated by it.
 
+
+### LPI v4 metric-gate restoration — validation pending
+
+The follow-up branch `codex/astra-lpi-metric-gate-2026-10-23` restores the check that existed only in `Final-Project/.github/workflows/ci.yml`. The root job runs six-epoch CPU smoke training with `--seed 0`, uses pinned `Final-Project/requirements-ci.txt`, then evaluates the generated checkpoint. As in the prior workflow, it hard-gates only `ber_field<1%` and `capture_decodes`; unstable short-budget stealth/adversary metrics are reported but not hard failures. `capture_decodes` uses a synthesized capture and therefore validates codec/framing—not a physical radio. CSV/log/JSON/Markdown artefacts are uploaded for inspection. **Status: pending branch CI.**
+
 ## Recommended order of work
 
 1. **Re-baseline and refresh GSD:** the pushed-source Linux baseline is complete; the local Mac/uncommitted workspace baseline and GSD state reconciliation remain pending until the concurrent agent reaches a stable checkpoint.
 2. **Resolve source-of-truth ambiguity:** the current docs support domain-specific owners—`Final-Project/` for LPI/research and root `SHADOWLINK-FIELD/` for the field console. Keep the nested byte-identical mirror frozen until a local path-reference and uncommitted-state check justifies consolidation.
-3. **Harden the new CI baseline:** the new pinned Python manifests and the repository-root workflow have passed the review-branch CI run. Fix the missing `tests/**` pull-request trigger, keep test summaries/artifacts, and bring the existing LPI metric gate into the root workflow only after reviewing its criteria.
+3. **Harden the new CI baseline:** pinned Python manifests and the root workflow are validated, and the `tests/**` pull-request trigger is fixed. A separate review branch restores the existing LPI v4 six-epoch CPU smoke-training/receive-link gate using the pinned research dependencies; its first CI run must pass before the metric gate is considered established.
 4. **Trace message security end to end:** AEAD, key management, message framing, replay defense, fragmentation, and PQC KAT/negative tests.
 5. **Lock down delivery reliability:** offline persistence, durable ACKs, idempotency, restarts, lost-ACK recovery, and multi-frame payloads.
 6. **Benchmark PHY improvements:** conventional baseline first; then synchronization/channel/FEC comparisons and CGAN/CNN changes only when held-out tests show a benefit.
