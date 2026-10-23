@@ -14,6 +14,8 @@ on:
       - "Final-Project/*.grc"
       - "Final-Project/**/*.grc"
       - "Final-Project/requirements*.txt"
+      - "Final-Project/lpi_v4/**"
+      - "Final-Project/tests/**"
       - "Final-Project/pytest.ini"
       - "Final-Project/.github/workflows/**"
       - "Final-Project/frontend/src/**"
@@ -47,6 +49,8 @@ on:
       - "Final-Project/*.grc"
       - "Final-Project/**/*.grc"
       - "Final-Project/requirements*.txt"
+      - "Final-Project/lpi_v4/**"
+      - "Final-Project/tests/**"
       - "Final-Project/pytest.ini"
       - "Final-Project/.github/workflows/**"
       - "Final-Project/frontend/src/**"
@@ -130,6 +134,76 @@ jobs:
           OMP_NUM_THREADS: "2"
           MKL_NUM_THREADS: "2"
         run: python -m pytest tests -o addopts=-ra -q
+
+  lpi-v4-metric-gate:
+    name: LPI v4 short-training receive-link metric gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lpi-research-tests
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Final-Project/requirements-ci.txt
+      - name: Install pinned LPI research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r Final-Project/requirements-ci.txt
+      - name: Run deterministic six-epoch CPU smoke training
+        working-directory: Final-Project/lpi_v4
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          mkdir -p run
+          python lpi_train.py --epochs 6 --steps 12 --batch 32 --seed 0 --device cpu \
+            --out run/ci.pt --log run/ci.csv --tb "" --export-dir run/ci_export 2>&1 | tee run/ci.log
+      - name: Enforce existing receive-link metric subset
+        working-directory: Final-Project/lpi_v4
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          python lpi_eval.py --ckpt run/ci.best.pt --frames 96 --snrs 5,8 --no-fail \
+            --out-json run/ci_eval.json --md run/ci_eval.md
+          python - <<'PY'
+          import json
+          import sys
+
+          with open("run/ci_eval.json", encoding="utf-8") as handle:
+              report = json.load(handle)
+
+          gate = report.get("gate", {})
+          hard = ["ber_field<1%", "capture_decodes"]
+          missing = [name for name in hard if name not in gate]
+          failed = [name for name in hard if not gate.get(name, False)]
+          print(json.dumps({
+              "gate": gate,
+              "checked_subset": hard,
+              "missing_checks": missing,
+              "failed_checks": failed,
+              "gate_vacuous": report.get("gate_vacuous", {}),
+              "interpretation": (
+                  "Synthetic capture exercises codec/framing; it does not validate radio hardware."
+              ),
+          }, indent=2))
+          if missing or failed:
+              sys.exit(f"LPI receive-link gate failed; missing={missing}, failed={failed}")
+          print("LPI receive-link smoke gate passed:", ", ".join(hard))
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lpi-v4-metric-gate
+          path: |
+            Final-Project/lpi_v4/run/ci.csv
+            Final-Project/lpi_v4/run/ci.log
+            Final-Project/lpi_v4/run/ci_eval.json
+            Final-Project/lpi_v4/run/ci_eval.md
+          retention-days: 14
+          if-no-files-found: warn
 
   field-root-tests:
     name: Root SHADOWLINK-FIELD Python tests
