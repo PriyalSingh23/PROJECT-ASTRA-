@@ -70,7 +70,7 @@ jobs:
           python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
       - name: Run field application tests
         working-directory: SHADOWLINK-FIELD
-        run: python -m pytest tests -q
+        run: python -m pytest tests -o addopts=-ra -q
 
   field-nested-context-tests:
     name: Nested SHADOWLINK-FIELD path-context tests
@@ -88,7 +88,7 @@ jobs:
           python -m pip install fastapi uvicorn sqlalchemy pydantic-settings PyJWT cryptography pytest httpx python-multipart websockets
       - name: Run nested-copy tests
         working-directory: Final-Project/SHADOWLINK-FIELD
-        run: python -m pytest tests -q
+        run: python -m pytest tests -o addopts=-ra -q
 
   frontend-builds:
     name: Frontend production build
