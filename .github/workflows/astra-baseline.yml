@@ -1,0 +1,195 @@
+name: ASTRA baseline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/**"
+      - "AGENTS.md"
+      - "scripts/astra_baseline_audit.py"
+      - "tests/**"
+      - "Final-Project/*.py"
+      - "Final-Project/**/*.py"
+      - "Final-Project/*.grc"
+      - "Final-Project/**/*.grc"
+      - "Final-Project/requirements*.txt"
+      - "Final-Project/pytest.ini"
+      - "Final-Project/.github/workflows/**"
+      - "Final-Project/frontend/src/**"
+      - "Final-Project/frontend/public/**"
+      - "Final-Project/frontend/package.json"
+      - "Final-Project/frontend/package-lock.json"
+      - "Final-Project/frontend/index.html"
+      - "Final-Project/frontend/vite.config.ts"
+      - "Final-Project/frontend/tsconfig*.json"
+      - "SHADOWLINK-FIELD/backend/**"
+      - "SHADOWLINK-FIELD/tests/**"
+      - "SHADOWLINK-FIELD/scripts/**"
+      - "SHADOWLINK-FIELD/requirements*.txt"
+      - "SHADOWLINK-FIELD/pytest.ini"
+      - "SHADOWLINK-FIELD/frontend/src/**"
+      - "SHADOWLINK-FIELD/frontend/public/**"
+      - "SHADOWLINK-FIELD/frontend/package.json"
+      - "SHADOWLINK-FIELD/frontend/package-lock.json"
+      - "SHADOWLINK-FIELD/frontend/index.html"
+      - "SHADOWLINK-FIELD/frontend/vite.config.ts"
+      - "SHADOWLINK-FIELD/frontend/tsconfig*.json"
+      - "Final-Project/SHADOWLINK-FIELD/**"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "AGENTS.md"
+      - "scripts/astra_baseline_audit.py"
+      - "tests/**"
+      - "Final-Project/*.py"
+      - "Final-Project/**/*.py"
+      - "Final-Project/*.grc"
+      - "Final-Project/**/*.grc"
+      - "Final-Project/requirements*.txt"
+      - "Final-Project/pytest.ini"
+      - "Final-Project/.github/workflows/**"
+      - "Final-Project/frontend/src/**"
+      - "Final-Project/frontend/public/**"
+      - "Final-Project/frontend/package.json"
+      - "Final-Project/frontend/package-lock.json"
+      - "Final-Project/frontend/index.html"
+      - "Final-Project/frontend/vite.config.ts"
+      - "Final-Project/frontend/tsconfig*.json"
+      - "SHADOWLINK-FIELD/backend/**"
+      - "SHADOWLINK-FIELD/tests/**"
+      - "SHADOWLINK-FIELD/scripts/**"
+      - "SHADOWLINK-FIELD/requirements*.txt"
+      - "SHADOWLINK-FIELD/pytest.ini"
+      - "SHADOWLINK-FIELD/frontend/src/**"
+      - "SHADOWLINK-FIELD/frontend/public/**"
+      - "SHADOWLINK-FIELD/frontend/package.json"
+      - "SHADOWLINK-FIELD/frontend/package-lock.json"
+      - "SHADOWLINK-FIELD/frontend/index.html"
+      - "SHADOWLINK-FIELD/frontend/vite.config.ts"
+      - "SHADOWLINK-FIELD/frontend/tsconfig*.json"
+      - "Final-Project/SHADOWLINK-FIELD/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: astra-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline-tool-tests:
+    name: Baseline audit tool unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test read-only inventory and path audit
+        run: python -m unittest discover -s tests -p "test_astra_baseline_audit.py" -v
+
+  baseline-inventory:
+    name: Repository inventory and duplicate-tree manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Generate baseline inventory
+        run: python scripts/astra_baseline_audit.py --repo-root . --output astra-baseline-inventory.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: astra-baseline-inventory
+          path: astra-baseline-inventory.json
+          if-no-files-found: error
+
+  lpi-research-tests:
+    name: Final-Project Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Final-Project/requirements-ci.txt
+      - name: Install research and test dependencies
+        working-directory: Final-Project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ci.txt
+      - name: Run research/application tests
+        working-directory: Final-Project
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: python -m pytest tests -o addopts=-ra -q
+
+  field-root-tests:
+    name: Root SHADOWLINK-FIELD Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: SHADOWLINK-FIELD/requirements-dev.txt
+      - name: Install field application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r SHADOWLINK-FIELD/requirements-dev.txt
+      - name: Run field application tests
+        working-directory: SHADOWLINK-FIELD
+        run: python -m pytest tests -o addopts=-ra -q
+
+  field-nested-context-tests:
+    name: Nested SHADOWLINK-FIELD path-context tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Final-Project/SHADOWLINK-FIELD/requirements-dev.txt
+      - name: Install field application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r Final-Project/SHADOWLINK-FIELD/requirements-dev.txt
+      - name: Run nested-copy tests
+        working-directory: Final-Project/SHADOWLINK-FIELD
+        run: python -m pytest tests -o addopts=-ra -q
+
+  frontend-builds:
+    name: Frontend production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project_dir:
+          - Final-Project/frontend
+          - SHADOWLINK-FIELD/frontend
+          - Final-Project/SHADOWLINK-FIELD/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ${{ matrix.project_dir }}/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: ${{ matrix.project_dir }}
+        run: npm ci
+      - name: Build frontend
+        working-directory: ${{ matrix.project_dir }}
+        run: npm run build
