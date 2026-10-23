@@ -68,13 +68,13 @@ The v4 LPI payload layer documents AES-128-CTR, RS(42,34), and CRC-8; the applic
 
 **Recommendation:** trace a single message from application encryption through fragmentation, adapter framing, receive/reassembly, tag validation and final delivery. Use known-answer tests and adversarial negative tests for the cryptographic code; independently review the custom ML-KEM implementation before relying on it for production security. Do not expose plaintext before AEAD verification succeeds.
 
-### F6 — Build/test automation is not visible in the committed tree
+### F6 — CI exists for the nested LPI research project, but not as a whole-repository gate
 
-No `.github/workflows/` paths are present at the audited revision. Existing reports describe Python/pytest and frontend build/test commands, but they are not evidence that every new commit automatically runs them.
+The audited tree contains `Final-Project/.github/workflows/ci.yml`, which runs LPI v4 loopback/framing tests and a short training-and-metric gate. No root-level `.github/workflows/` is present, and the inspected workflow is scoped to the LPI research paths; it does not demonstrate that the full `Final-Project` messaging/Motorola suites or the separate root `SHADOWLINK-FIELD/` app are tested on every pull request.
 
-**Risk:** a regression can be committed without a reproducible check, especially across the distinct `Final-Project` and `SHADOWLINK-FIELD` trees.
+**Risk:** a regression in messaging, Motorola integration, the second application stack, or frontend builds may not be caught by the existing LPI-focused CI.
 
-**Recommendation:** after confirming supported Python/Node versions and dependency installation, add separate CI jobs for the two applications, plus a concise integration/smoke job. Keep hardware-only tests marked and skipped by explicit capability checks; never let absence of hardware create fabricated success.
+**Recommendation:** first inspect the current workflow triggers and run it against the actual nested layout; then add or extend separate CI jobs for the relevant application roots and frontend builds. Keep hardware-only tests marked and skipped by explicit capability checks; never let absence of hardware create fabricated success.
 
 ### F7 — Older repository concerns need revalidation, not blind application
 
