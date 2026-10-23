@@ -127,11 +127,27 @@ Warnings observed are maintenance items, not test failures: TorchScript `torch.j
 
 The root inventory artifact is uploaded as `astra-baseline-inventory` on the workflow run. To reproduce on a stable local checkout after the active agent reaches a checkpoint, run the baseline script in inventory-only mode first, then re-run with `--run-tests --run-builds`. The GitHub run does not prove the live radio, Motorola model, Pi, or local Apple Silicon environment works.
 
+
+### Latest verified run with pinned manifests — 2026-10-23
+
+Run: [ASTRA baseline #39951110358](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358), commit `deec42bfca837d5f79ee95df34c99fe13c16352c`. All eight jobs completed successfully.
+
+| Job | Result |
+|---|---:|
+| Baseline audit-tool unit tests | **5 passed** |
+| `Final-Project` Python tests | **387 passed**, 5 warnings, 271.36 s |
+| Root `SHADOWLINK-FIELD` Python tests | **26 passed**, 5 warnings, 4.46 s |
+| Nested `Final-Project/SHADOWLINK-FIELD` tests | **26 passed**, 5 warnings, 4.35 s |
+| All three frontend production builds | **Passed** |
+| Repository inventory / field-tree manifest | **132/132 matching entries**, 0 different, 0 only-left/right |
+
+The inventory count rose from 130 to 132 after adding pinned runtime/development requirements files to both field trees; the two copies remain matching. Warnings remain maintenance items rather than test failures. This run validates the pushed Linux checkout only. The local Mac dirty-state/GSD baseline and physical hardware are not validated by it.
+
 ## Recommended order of work
 
 1. **Re-baseline and refresh GSD:** the pushed-source Linux baseline is complete; the local Mac/uncommitted workspace baseline and GSD state reconciliation remain pending until the concurrent agent reaches a stable checkpoint.
 2. **Resolve source-of-truth ambiguity:** the current docs support domain-specific owners—`Final-Project/` for LPI/research and root `SHADOWLINK-FIELD/` for the field console. Keep the nested byte-identical mirror frozen until a local path-reference and uncommitted-state check justifies consolidation.
-3. **Harden the new CI baseline:** use maintained/pinned dependency manifests, capture test summaries and artifacts, and bring the existing LPI metric gate into the root workflow after reviewing its criteria. The initial root workflow is now green but still installs an unpinned dependency list.
+3. **Harden the new CI baseline:** the new pinned Python manifests and the repository-root workflow have passed the review-branch CI run. Fix the missing `tests/**` pull-request trigger, keep test summaries/artifacts, and bring the existing LPI metric gate into the root workflow only after reviewing its criteria.
 4. **Trace message security end to end:** AEAD, key management, message framing, replay defense, fragmentation, and PQC KAT/negative tests.
 5. **Lock down delivery reliability:** offline persistence, durable ACKs, idempotency, restarts, lost-ACK recovery, and multi-frame payloads.
 6. **Benchmark PHY improvements:** conventional baseline first; then synchronization/channel/FEC comparisons and CGAN/CNN changes only when held-out tests show a benefit.
@@ -164,4 +180,4 @@ The baseline workflow no longer installs floating dependency names directly. It 
 - `SHADOWLINK-FIELD/requirements.txt` and `requirements-dev.txt`: pinned runtime/test dependencies
 - Identical copies of those two field manifests under the nested mirror to keep the mirror comparison honest until a separate cleanup change
 
-The workflow was also upgraded to GitHub's current v7 first-party actions (`checkout`, `setup-python`, `setup-node`, and `upload-artifact`) and its path filters were narrowed toward application code, tests, dependency manifests, front-end build inputs, the audit runner, and workflow files. This avoids rerunning the full research suite for ordinary documentation-only edits. These changes are pending CI verification on the current branch head; do not treat the manifest update itself as validated until that run passes.
+The workflow was upgraded to GitHub's current v7 first-party actions (`checkout`, `setup-python`, `setup-node`, and `upload-artifact`) and its path filters were narrowed toward application code, tests, dependency manifests, front-end build inputs, the audit runner, and workflow files. The latest run before this audit refresh, [#39951110358](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358) on commit `deec42bfca837d5f79ee95df34c99fe13c16352c`, passed all eight jobs, including the five baseline-tool unit tests and all three Python test roots. The path-filter review found one omission: `tests/**` was present in `push.paths` but absent from `pull_request.paths`; that trigger gap is being corrected on this review branch.
