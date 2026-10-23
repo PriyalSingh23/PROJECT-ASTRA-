@@ -259,3 +259,19 @@ def test_legacy_fixed_counter_lpi_app_is_blocked_in_production(monkeypatch):
             "Final-Project/app.py",
             "legacy AES-CTR uses a fixed initial counter",
         )
+
+
+def test_development_mode_fallback_remains_explicit_and_compatible(monkeypatch, caplog):
+    import logging
+    import messaging.security_config as security_config
+
+    monkeypatch.delenv("SHADOWCOMM_ENV", raising=False)
+    monkeypatch.delenv("SHADOWCOMM_SECRET_KEY", raising=False)
+    monkeypatch.setattr(security_config, "_WARNED_NAMES", set())
+    caplog.set_level(logging.WARNING, logger="messaging.security_config")
+
+    assert get_app_secret_key() == DEMO_SECRET_KEY
+    assert any(
+        "SECURITY WARNING" in record.message and "SHADOWCOMM_SECRET_KEY" in record.message
+        for record in caplog.records
+    )
