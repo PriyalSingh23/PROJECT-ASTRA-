@@ -275,3 +275,18 @@ def test_development_mode_fallback_remains_explicit_and_compatible(monkeypatch, 
         "SECURITY WARNING" in record.message and "SHADOWCOMM_SECRET_KEY" in record.message
         for record in caplog.records
     )
+
+
+
+def test_production_mode_forces_endpoint_authentication(monkeypatch):
+    from messaging.security_config import endpoint_authentication_required
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    monkeypatch.delenv("SHADOWCOMM_REQUIRE_AUTH", raising=False)
+    assert endpoint_authentication_required() is True
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "development")
+    assert endpoint_authentication_required() is False
+
+    monkeypatch.setenv("SHADOWCOMM_REQUIRE_AUTH", "yes")
+    assert endpoint_authentication_required() is True
