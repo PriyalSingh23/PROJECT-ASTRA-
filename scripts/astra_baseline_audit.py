@@ -197,7 +197,7 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
         for name in sorted(files):
             path = current_path / name
             rel = path.relative_to(root).as_posix()
-            if rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD":
+            if rel.startswith(nested_prefix) or rel == "Final-Project/SHADOWLINK-FIELD" or rel == Path(__file__).resolve().relative_to(root).as_posix():
                 continue
             if path.suffix.lower() not in TEXT_SUFFIXES or path.is_symlink() or not path.is_file():
                 continue
@@ -211,11 +211,12 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
                 continue
             files_scanned += 1
             for line_number, line in enumerate(content.splitlines(), start=1):
-                if token in line.replace("\\\\", "/"):
+                if token in line.replace(chr(92), "/"):
                     if len(matches) < max_matches:
                         matches.append({
                             "path": rel,
                             "line": line_number,
+                            "kind": "documentation" if path.suffix.lower() in {".md", ".txt"} else "code_or_config",
                             "text": line.strip()[:300],
                         })
 
@@ -225,6 +226,8 @@ def path_reference_audit(root: Path) -> dict[str, Any]:
         "large_files_skipped": large_files_skipped,
         "unreadable_files_skipped": unreadable_files_skipped,
         "match_count_returned": len(matches),
+        "documentation_match_count": sum(item["kind"] == "documentation" for item in matches),
+        "code_or_config_match_count": sum(item["kind"] == "code_or_config" for item in matches),
         "matches_truncated": len(matches) >= max_matches,
         "matches": matches,
         "interpretation": (
