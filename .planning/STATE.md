@@ -37,7 +37,7 @@ Last activity: 2026-10-20 — Phase 9 goal-backward verification completed (scor
 ## Monorepo validation boundary (2026-10-23)
 
 - The 291-test figure above is the historical v2.0 GSD milestone result reported on 2026-10-20; it is not a repo-wide test total.
-- Draft PR #1 establishes a repo-wide Linux baseline across `Final-Project/`, root `SHADOWLINK-FIELD/`, the nested mirror, and three frontend builds. The earlier completed run passed its jobs; the updated run using pinned direct-dependency manifests is still being checked. Consult PR #1 for the current CI status before treating its latest head as green.
+- The latest completed draft PR #1 CI run (#39951110358) passed: 387 tests in `Final-Project/`, 26 tests in root `SHADOWLINK-FIELD/`, 26 tests from the nested mirror, 5 baseline-tool tests, and all three frontend builds. Inventory shows 132/132 matching field-tree entries. This is Linux CI for PR head `deec42bfca837d5f79ee95df34c99fe13c16352c`, not local Mac/unpushed changes or hardware validation.
 - The root and nested field-app trees are byte-identical in the audited Git snapshot (132 entries including the added dependency manifests). Do not remove the nested copy until local dirty files, launchers and deployment assumptions have been reviewed.
 - No physical Motorola radio, Raspberry Pi, sound card or USRP was operated by the repo-wide CI. Physical-radio and over-the-air acceptance remains pending; software tests must not be presented as hardware results.
 

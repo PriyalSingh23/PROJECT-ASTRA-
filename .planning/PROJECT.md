@@ -84,7 +84,7 @@ These are evidence/acceptance gaps; an unchecked item does not imply that the re
 
 ## Context
 
-- **Current State:** root GSD marks v2.0 phases 1–9 complete as of 2026-10-20. The first repo-wide Linux baseline is being established in draft PR #1; the current pinned-dependency run must finish before its results replace the earlier successful run.
+- **Current State:** root GSD marks v2.0 phases 1–9 complete as of 2026-10-20. The latest repo-wide Linux baseline run for draft PR #1 passed on 2026-10-23: 387 `Final-Project` tests, 26 tests from each of the two field-app paths, 5 baseline-tool tests, and all three frontend builds. This is pushed-source CI only; it does not validate uncommitted Mac changes or physical hardware.
 - **Source of Truth:** this is a monorepo with domain-specific owners as defined above. Do not treat `Final-Project/` alone as the whole ASTRA system.
 - **Development Environment:** macOS (Darwin / Apple Silicon `arm64`) with Python 3.12 (`radioconda`), Node.js v24, npm 11.
 - **Port Strategy:** Port 5050 is the unified canonical port for Flask REST API and static React UI distribution.

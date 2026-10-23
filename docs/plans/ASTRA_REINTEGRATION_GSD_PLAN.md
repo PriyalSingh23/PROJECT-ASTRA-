@@ -75,7 +75,7 @@
 
 ## Phase 2 — Migrate or remove the nested mirror (separate reviewed change)
 
-**Remote static scan status:** complete. The path scanner now distinguishes application/code-config matches, CI workflow matches, test-fixture examples, and documentation. The previous artifact found six CI workflow literals and six unit-test fixture literals, but no pre-existing application launcher/source/config references to the nested path. The audit and plan documents are excluded to avoid self-referential counts. After adding pinned dependency manifests to both copies, their inventories are 132/132 matching entries. This makes a separate cleanup PR reasonable after a local checkpoint, not safe to delete blindly.
+**Remote static scan status:** complete. On PR #1 head `deec42bfca837d5f79ee95df34c99fe13c16352c`, the scanner examined 638 text/config files outside the nested mirror and found 13 literal matches: 6 CI workflow references and 7 test-fixture examples. It found zero pre-existing application source/config references and zero documentation matches outside the excluded self-referential audit/plan. The mirrored trees have 132/132 matching entries. A separate cleanup PR may be considered after the local checkpoint; static scanning alone is not safe-deletion proof.
 
 ### Work
 - Search all launch scripts, Python imports, frontend commands, tests, docs, workflows and relative paths for both field roots.
@@ -90,11 +90,11 @@
 
 ## Phase 3 — Verify and harden repository-root CI
 
-An initial `.github/workflows/astra-baseline.yml` has been added on this review branch. It attempts four parallel gates: the Final-Project Python tests, root SHADOWLINK-FIELD Python tests, nested-copy path-context tests, and production builds for all three frontends.
+An initial `.github/workflows/astra-baseline.yml` has been added on the review branch. It attempts four parallel gates: the Final-Project Python tests, root SHADOWLINK-FIELD Python tests, nested-copy path-context tests, and production builds for all three frontends. A separate unit-test job covers the baseline audit tool.
 
-**Status: initial baseline passed in GitHub Actions** on 2026-10-23 (review-branch run; see the [workflow result](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39944874537)). Results: `Final-Project` 387 passed; root and nested field-app tests 26 passed each; all three frontend builds passed; inventory manifest found 130/130 matching relative entries. The research suite took 277.27 seconds and emitted five warnings; the field suites each emitted five deprecation warnings. This proves the pushed CI checkout only, not the local Mac checkout, uncommitted agent changes, or radio hardware.
+**Status: baseline passed in GitHub Actions** on 2026-10-23 (see the [latest completed workflow run](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358), PR #1 head `deec42bfca837d5f79ee95df34c99fe13c16352c`). Results: `Final-Project` 387 passed; root and nested field-app tests 26 passed each; baseline-tool tests 5/5; all three frontend builds passed; inventory found 132/132 matching relative entries. The research suite took 271.36 seconds (5 warnings); field test suites took 4.46 and 4.35 seconds (5 warnings each). This proves the pushed CI checkout only, not the local Mac checkout, uncommitted agent changes, or radio hardware.
 
-- Keep explicit dependency setup for now; after this baseline, move it into maintained manifests in a dedicated change and pin compatible versions.
+- The research CI and field app use pinned direct-dependency manifests. Transitive Python dependencies are not fully locked; for stricter supply-chain reproducibility, introduce an appropriate lock/constraints workflow after reviewing platform compatibility.
 - Track TorchScript/tracer, Starlette/httpx, and Pydantic deprecations as follow-up maintenance.
 - Hardware-dependent tests are not run by these jobs and must stay reported as unavailable until a supported, authorized device test is performed.
 - Preserve the existing LPI metric gate with paths and working directories adapted to monorepo root; the baseline job here does not yet reproduce the separate 6-epoch metric gate.

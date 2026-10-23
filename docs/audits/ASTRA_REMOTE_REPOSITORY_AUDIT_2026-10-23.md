@@ -111,27 +111,30 @@ Both copies share `.planning/PROJECT.md` which still calls the product SHADOWCOM
 
 ## Fresh CI baseline — 2026-10-23
 
-Workflow: [ASTRA baseline run](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39944874537), PR head `1764a2fb92a923c90723fe73cff61a5e375ea060`. GitHub Actions checked out its pull-request merge ref; the run tests the pushed PR/main merge state, not the uncommitted local workspace.
+Workflow: [latest completed ASTRA baseline run](https://github.com/PriyalSingh23/PROJECT-ASTRA-/actions/runs/39951110358), PR #1 head `deec42bfca837d5f79ee95df34c99fe13c16352c`. All jobs completed successfully on the 2026-10-23 Linux run. GitHub Actions tests the pushed PR merge ref, not the uncommitted local workspace.
 
 | Job | Result | Notes |
 |---|---:|---|
-| `Final-Project` Python tests | **387 passed** | Python 3.12.15, CPU Torch; 5 warnings, 277.27 s |
-| Root `SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.49 s |
-| Nested `Final-Project/SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.53 s |
+| `Final-Project` Python tests | **387 passed** | Python 3.12.15, CPU Torch; 5 warnings, 271.36 s |
+| Root `SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.46 s |
+| Nested `Final-Project/SHADOWLINK-FIELD` Python tests | **26 passed** | 5 warnings, 4.35 s |
+| Baseline audit-tool unit tests | **5 passed** | 0.008 s |
 | `Final-Project/frontend` production build | **Passed** | `npm ci` + `npm run build` |
 | Root `SHADOWLINK-FIELD/frontend` production build | **Passed** | `npm ci` + `npm run build` |
 | Nested field-copy frontend production build | **Passed** | `npm ci` + `npm run build` |
-| Read-only inventory + manifest | **Passed** | 130 entries on each field tree; 130 matched; 0 different, 0 only-left, 0 only-right |
+| Read-only inventory + manifest | **Passed** | 132 entries on each field tree; 132 matched; 0 different, 0 only-left, 0 only-right |
 
-Warnings observed are maintenance items, not test failures: TorchScript `torch.jit.load`/`torch.jit.trace` deprecation and a tracer warning; field app tests also emit Starlette/httpx and Pydantic config deprecations. The three field-app build/test jobs run both copies separately on purpose, to establish that the mirrored path currently behaves the same when invoked from its own working directory. These duplicated passes are not 52 distinct field-app tests.
+The audit inventory artifact (`astra-baseline-inventory`) reports 638 text/config files scanned outside the nested mirror and 13 direct literal path matches: 6 CI-workflow references and 7 intentional test-fixture references, with zero pre-existing application code/config or documentation matches outside the mirror. The mirror’s new pinned dependency manifests account for the move from 130 to 132 entries per tree.
 
-The root inventory artifact is uploaded as `astra-baseline-inventory` on the workflow run. To reproduce on a stable local checkout after the active agent reaches a checkpoint, run the baseline script in inventory-only mode first, then re-run with `--run-tests --run-builds`. The GitHub run does not prove the live radio, Motorola model, Pi, or local Apple Silicon environment works.
+Warnings are maintenance items, not test failures: TorchScript tracing/deprecation warnings plus Starlette/httpx and Pydantic config deprecations. The two field-app suites intentionally run from both parent paths to verify path-context compatibility; they are duplicated runs, not 52 distinct field tests.
+
+The workflow uses pinned **direct** Python dependencies in the research CI manifest and the field runtime/dev manifests. It does not provide a complete lock of every transitive Python dependency; transitive versions are resolved by pip at run time. The GitHub run does not prove the live radio, Motorola model, Pi, or local Apple Silicon environment works. To reproduce on a stable local checkout after the active agent reaches a checkpoint, run the baseline script in inventory-only mode first, then re-run with `--run-tests --run-builds`.
 
 ## Recommended order of work
 
 1. **Re-baseline and refresh GSD:** the pushed-source Linux baseline is complete; the local Mac/uncommitted workspace baseline and GSD state reconciliation remain pending until the concurrent agent reaches a stable checkpoint.
 2. **Resolve source-of-truth ambiguity:** the current docs support domain-specific owners—`Final-Project/` for LPI/research and root `SHADOWLINK-FIELD/` for the field console. Keep the nested byte-identical mirror frozen until a local path-reference and uncommitted-state check justifies consolidation.
-3. **Harden the new CI baseline:** use maintained/pinned dependency manifests, capture test summaries and artifacts, and bring the existing LPI metric gate into the root workflow after reviewing its criteria. The initial root workflow is now green but still installs an unpinned dependency list.
+3. **Harden the new CI baseline:** retain the passing root workflow with pinned direct dependencies and uploaded inventory artifact; next review transitive reproducibility if needed and bring the existing LPI metric gate into root CI after reviewing its criteria. The current jobs do not yet reproduce the separate 6-epoch metric gate.
 4. **Trace message security end to end:** AEAD, key management, message framing, replay defense, fragmentation, and PQC KAT/negative tests.
 5. **Lock down delivery reliability:** offline persistence, durable ACKs, idempotency, restarts, lost-ACK recovery, and multi-frame payloads.
 6. **Benchmark PHY improvements:** conventional baseline first; then synchronization/channel/FEC comparisons and CGAN/CNN changes only when held-out tests show a benefit.
@@ -141,7 +144,7 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 
 - This audit does not change or merge `main`.
 - The fresh CI run below passed all three Python test roots and all three frontend builds. This is a Linux CI baseline for pushed source, not a test of the local Mac working tree or physical hardware.
-- The baseline runner's inventory job passed and recorded 130/130 matching relative entries between the two field-app trees.
+- The baseline runner's inventory job recorded 132/132 matching relative entries between the two field-app trees.
 - No radio was armed or operated.
 - No physical range, BER, FER, latency, or jamming-resilience result is inferred from software simulation.
 - Do not merge this plan or delete duplicate source paths without reviewing it alongside the current local agent's changes.
@@ -149,13 +152,15 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 
 ### F9 — Static path-reference scan supports, but does not authorize, mirror removal
 
-The latest review-branch inventory scan separates direct references by type:
-- The current artifact is generated on the older 2026-10-23 review head with 132 matching entries in each field tree; all 132 relative entries match.
-- Direct string matches previously totalled 12: 6 CI workflow entries and 6 test-fixture examples. The test-fixture matches are intentional tests of the scanner, not application dependencies.
-- No pre-existing application launcher, runtime source, or product configuration was found to reference the nested copy outside the nested tree.
-- Documentation matches in the audit and plan are excluded to avoid self-referential counts.
+The latest completed inventory artifact for PR #1 head `deec42bfca837d5f79ee95df34c99fe13c16352c` reports:
+- 638 text/config files scanned outside `Final-Project/SHADOWLINK-FIELD/`
+- 13 direct string matches: 6 CI workflow references and 7 test-fixture examples
+- 0 direct matches in pre-existing application source/config and 0 documentation matches (the audit/plan documents are excluded to avoid self-reference)
+- 132 entries in each field tree; 132/132 matched, with no different or one-sided entries
 
-This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
+All six CI matches deliberately exercise the nested path in `.github/workflows/astra-baseline.yml`; all seven test matches are fixtures for testing the scanner itself. This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
+
+
 
 ### F10 — Dependency manifests and Actions runtime have been made explicit
 
@@ -164,4 +169,4 @@ The baseline workflow no longer installs floating dependency names directly. It 
 - `SHADOWLINK-FIELD/requirements.txt` and `requirements-dev.txt`: pinned runtime/test dependencies
 - Identical copies of those two field manifests under the nested mirror to keep the mirror comparison honest until a separate cleanup change
 
-The workflow was also upgraded to GitHub's current v7 first-party actions (`checkout`, `setup-python`, `setup-node`, and `upload-artifact`) and its path filters were narrowed toward application code, tests, dependency manifests, front-end build inputs, the audit runner, and workflow files. This avoids rerunning the full research suite for ordinary documentation-only edits. These changes are pending CI verification on the current branch head; do not treat the manifest update itself as validated until that run passes.
+The workflow was also upgraded to GitHub's current v7 first-party actions (`checkout`, `setup-python`, `setup-node`, and `upload-artifact`) and its path filters were narrowed toward application code, tests, dependency manifests, front-end build inputs, the audit runner, and workflow files. This avoids rerunning the full research suite for ordinary documentation-only edits. The latest completed run (#39951110358) passed all Python/test and frontend-build jobs using these manifests and action versions. Direct Python dependencies are pinned; transitive dependencies are not fully locked.
