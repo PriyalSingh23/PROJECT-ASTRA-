@@ -128,6 +128,14 @@ def get_endpoint_token(name: str, development_default: str) -> str:
     )
 
 
+def ensure_distinct_endpoint_tokens(token_a: str, token_b: str) -> None:
+    """Require distinct A/B tokens in production; keep legacy demo behavior in development."""
+    if is_production() and token_a == token_b:
+        raise RuntimeError(
+            "SHADOWCOMM_TOKEN_ENDPOINT_A and SHADOWCOMM_TOKEN_ENDPOINT_B must be different in production."
+        )
+
+
 def get_seed_password(name: str, development_default: str) -> str:
     """Resolve the first-run seed password without known production defaults."""
     return get_configured_secret(
