@@ -10,21 +10,37 @@ from flask_socketio import SocketIO, emit
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from reedsolo import RSCodec
+from messaging.security_config import (
+    ensure_legacy_component_not_production,
+    get_configured_secret,
+)
+
+# Legacy AES-CTR starts every message with the same counter, so this standalone
+# prototype must not run in production until its framing/nonce design is replaced.
+ensure_legacy_component_not_production(
+    "Final-Project/app.py",
+    "legacy AES-CTR uses a fixed initial counter and is restricted to research/demo use",
+)
+
 from models import Generator, Decoder
 
 # Load security configuration from environment with validation
-_env_secret = os.environ.get("SHADOWCOMM_SECRET_KEY")
-if not _env_secret:
-    print("[SECURITY WARNING] 'SHADOWCOMM_SECRET_KEY' environment variable not set. Using dev fallback.")
-    _env_secret = "dev-insecure-shadowcomm-secret-key"
+_env_secret = get_configured_secret(
+    "SHADOWCOMM_SECRET_KEY",
+    "dev-insecure-shadowcomm-secret-key",
+    minimum_length=32,
+    purpose="legacy prototype session key",
+)
 
 _env_cors = os.environ.get("SHADOWCOMM_CORS_ORIGINS", "http://127.0.0.1:5001,http://localhost:5001,http://127.0.0.1:5050,http://localhost:5050")
 _cors_origins = [o.strip() for o in _env_cors.split(",") if o.strip()]
 
-_env_aes_key = os.environ.get("SHADOWCOMM_AES_KEY")
-if not _env_aes_key or _env_aes_key == "0123456789abcdef":
-    print("[SECURITY WARNING] Insecure or default AES key in use. Rotate SHADOWCOMM_AES_KEY before production/pilot.")
-    _env_aes_key = "0123456789abcdef"
+_env_aes_key = get_configured_secret(
+    "SHADOWCOMM_AES_KEY",
+    "0123456789abcdef",
+    minimum_length=16,
+    purpose="legacy AES-CTR research key",
+)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = _env_secret
