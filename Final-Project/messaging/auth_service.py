@@ -4,6 +4,11 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple
 from sqlalchemy.orm import Session
 from messaging.models import User, UserSession, SecurityAuditLog, utcnow
+from messaging.security_config import (
+    DEMO_ADMIN_PASSWORD,
+    DEMO_OPERATOR_PASSWORD,
+    get_seed_password,
+)
 
 
 SESSION_DURATION_HOURS = 1
@@ -171,8 +176,8 @@ class AuthService:
         """Seeds default administrator and field operator if users table is empty."""
         count = session.query(User).count()
         if count == 0:
-            admin_pw = os.environ.get("SHADOWCOMM_ADMIN_PASSWORD", "AdminPass@2026!")
-            operator_pw = os.environ.get("SHADOWCOMM_OPERATOR_PASSWORD", "OperatorPass@2026!")
+            admin_pw = get_seed_password("SHADOWCOMM_ADMIN_PASSWORD", DEMO_ADMIN_PASSWORD)
+            operator_pw = get_seed_password("SHADOWCOMM_OPERATOR_PASSWORD", DEMO_OPERATOR_PASSWORD)
             
             admin = User(username="admin", role="ADMINISTRATOR")
             admin.set_password(admin_pw)
