@@ -22,9 +22,10 @@ This report documents the security audit conducted on the legacy and messaging s
 | **SEC-01** | Hardcoded AES-128 Encryption Key (`0123456789abcdef`) | `app.py:27`, `index.html:357`, `lpi_v4/lpi_crypto.py:242` | **HIGH** | **REMEDIATED** in active code; env variable overrides enabled. |
 | **SEC-02** | Hardcoded Flask session secret (`shadowcomm-secret-key`) | `app.py`, `messaging/server.py`, `messaging/ack_manager.py` | **MEDIUM** | Production-mode fail-closed guard added in the security branch; local-development fallback remains explicit and warns. Pending CI until the branch passes. |
 | **SEC-03** | Permissive Wildcard CORS (`cors_allowed_origins="*"`) | `app.py:16` | **MEDIUM** | **REMEDIATED**; restricted to explicit origin list from `SHADOWCOMM_CORS_ORIGINS`. |
-| **SEC-04** | Static Zero-Counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py:48`, `test_metrics.py:301` | **HIGH** | **DOCUMENTED**; keystream reuse vulnerability identified; pilot isolated. |
+| **SEC-04** | Static zero-counter in AES-CTR (`Counter.new(128, initial_value=0)`) | `app.py`, legacy tests | **HIGH** | Fixed-counter design remains unsafe; the standalone prototype is blocked when `SHADOWCOMM_ENV=production`, but its crypto is not repaired. |
 | **SEC-05** | Unauthenticated API Message Ingestion | `messaging/api.py:48` | **HIGH** | **REMEDIATED**; added `verify_auth` endpoint and `X-Endpoint-Token` validation. |
-| **SEC-06** | Plaintext Payload Logging / Event Leakage | `messaging/models.py:185` | **LOW** | **REMEDIATED**; `to_dict()` sanitizes audit metadata. |
+| **SEC-06** | Plaintext payload logging / event leakage | `messaging/models.py:185` | **LOW** | **REMEDIATED**; `to_dict()` sanitizes audit metadata. |
+| **SEC-07** | Predictable seeded endpoint tokens and default account passwords | `messaging/db.py`, `messaging/auth_service.py` | **HIGH** | Production startup guard added on the security branch; missing/weak credentials, mismatched stored tokens, or documented demo passwords block startup. Pending CI. |
 
 ---
 
@@ -44,7 +45,7 @@ $ git log -S "shadowcomm-secret-key" --oneline
 ### Remediation Protocol for Exposed Historical Secrets
 1. **Compromised Status**: The key `0123456789abcdef` and secret `shadowcomm-secret-key` are permanently untrusted and must never be used in production or field environments.
 2. **No Destructive Rewriting**: Because force-pushing (`git push --force`) or rewriting repository history breaks collaborator workflows and risks data loss, the historical commits are preserved.
-3. **Environment Isolation**: The runtime code has been modified to prioritize environment variables. If `SHADOWCOMM_AES_KEY` or `SHADOWCOMM_SECRET_KEY` are not explicitly defined, the system logs a high-visibility security warning:
+3. **Environment Isolation**: Development mode preserves demo fallbacks for local simulations and logs a high-visibility security warning. The follow-up production guard requires `SHADOWCOMM_ENV=production` explicitly and fails closed for missing, weak, or placeholder session secrets and endpoint credentials:
    ```
    [SECURITY WARNING] Insecure or default AES key in use. Rotate SHADOWCOMM_AES_KEY before production/pilot.
    [SECURITY WARNING] 'SHADOWCOMM_SECRET_KEY' environment variable not set. Using dev fallback.
@@ -123,10 +124,14 @@ Before conducting the two-device local network pilot:
 - [ ] Assign distinct device tokens for Endpoint A and Endpoint B.
 - [ ] Export environment variables:
   ```bash
+  export SHADOWCOMM_ENV=production
   export SHADOWCOMM_REQUIRE_AUTH=true
-  export SHADOWCOMM_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-  export SHADOWCOMM_TOKEN_ENDPOINT_A="token-pilot-alpha-94e82b"
-  export SHADOWCOMM_TOKEN_ENDPOINT_B="token-pilot-bravo-31a7c4"
+  export SHADOWCOMM_SECRET_KEY="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_TOKEN_ENDPOINT_A="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_TOKEN_ENDPOINT_B="$(python3 -c "import secrets; print(secrets.token_hex(32))")"
+  export SHADOWCOMM_ADMIN_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  export SHADOWCOMM_OPERATOR_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  # If reusing an existing database, rotate its endpoint tokens and demo passwords first.
   ```
 - [ ] Ensure the pilot runs on a protected WPA2/WPA3 local Wi-Fi network without public internet exposure.
 
