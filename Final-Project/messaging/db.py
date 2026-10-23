@@ -8,6 +8,7 @@ from messaging.security_config import (
     DEMO_TOKEN_ENDPOINT_A,
     DEMO_TOKEN_ENDPOINT_B,
     get_endpoint_token,
+    ensure_distinct_endpoint_tokens,
     is_production,
 )
 from messaging.models import Base, Endpoint, SystemSetting, utcnow
@@ -177,6 +178,7 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
         # Seed Endpoint B
         keyring_b = keyring_manager.load_or_generate_keyring("endpoint-b")
         token_b = get_endpoint_token("SHADOWCOMM_TOKEN_ENDPOINT_B", DEMO_TOKEN_ENDPOINT_B)
+        ensure_distinct_endpoint_tokens(token_a, token_b)
         ep_b = session.query(Endpoint).filter_by(endpoint_id="endpoint-b").first()
         if not ep_b:
             ep_b = Endpoint(
