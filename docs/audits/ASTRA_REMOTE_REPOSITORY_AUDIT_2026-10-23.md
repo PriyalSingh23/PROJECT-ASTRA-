@@ -119,9 +119,9 @@ The root inventory artifact is uploaded as `astra-baseline-inventory` on the wor
 
 ## Recommended order of work
 
-1. **Re-baseline and refresh GSD:** inspect local changes, run the true suite, map the current code, reconcile test evidence and milestone state.
-2. **Resolve source-of-truth ambiguity:** confirm the role of the two identical SHADOWLINK-FIELD directories and define the interface between the two application stacks.
-3. **Add test automation:** CI for each application plus an integration smoke test, with hardware capabilities explicit.
+1. **Re-baseline and refresh GSD:** the pushed-source Linux baseline is complete; the local Mac/uncommitted workspace baseline and GSD state reconciliation remain pending until the concurrent agent reaches a stable checkpoint.
+2. **Resolve source-of-truth ambiguity:** the current docs support domain-specific owners—`Final-Project/` for LPI/research and root `SHADOWLINK-FIELD/` for the field console. Keep the nested byte-identical mirror frozen until a local path-reference and uncommitted-state check justifies consolidation.
+3. **Harden the new CI baseline:** use maintained/pinned dependency manifests, capture test summaries and artifacts, and bring the existing LPI metric gate into the root workflow after reviewing its criteria. The initial root workflow is now green but still installs an unpinned dependency list.
 4. **Trace message security end to end:** AEAD, key management, message framing, replay defense, fragmentation, and PQC KAT/negative tests.
 5. **Lock down delivery reliability:** offline persistence, durable ACKs, idempotency, restarts, lost-ACK recovery, and multi-frame payloads.
 6. **Benchmark PHY improvements:** conventional baseline first; then synchronization/channel/FEC comparisons and CGAN/CNN changes only when held-out tests show a benefit.

@@ -43,6 +43,8 @@
 
 ### Acceptance criteria
 
+**Remote CI baseline: passed. Local workspace baseline: pending.** The latest successful remote inventory artifact records the checked-out commit, detached checkout state, runtime versions and repository root. It intentionally cannot record the local Mac dirty state; obtain that locally after the active agent reaches a stable checkpoint.
+
 - Baseline JSON records repository root, commit SHA, current branch, dirty state and runtime versions.
 - All three Python test roots and all available frontend builds have explicit pass/fail/blocked results. Tests are not silently omitted when dependencies or toolchains are missing.
 - The duplicate tree comparison reports exact same/different/missing paths and hashes. At the audited commit, all 130 relative entries matched.
