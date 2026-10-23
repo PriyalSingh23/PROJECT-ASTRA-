@@ -17,6 +17,7 @@ DEMO_TOKEN_ENDPOINT_A = "token-pilot-alpha-94e82b"
 DEMO_TOKEN_ENDPOINT_B = "token-pilot-bravo-31a7c4"
 DEMO_ADMIN_PASSWORD = "AdminPass@2026!"
 DEMO_OPERATOR_PASSWORD = "OperatorPass@2026!"
+DEMO_VIEWER_PASSWORD = "ViewerPassword123!"
 
 _PRODUCTION_MODES = {"prod", "production"}
 _WARNED_NAMES: set[str] = set()
