@@ -20,17 +20,20 @@ The most recent commit, `76ba209`, states that the SDR receive path was fixed by
 
 ## Findings
 
-### F1 — There are two identical SHADOWLINK-FIELD trees inside the repository
+### F1 — Two identical SHADOWLINK-FIELD trees with conflicting documented ownership
 
-The committed Git tree contains:
-- `SHADOWLINK-FIELD/`: 130 paths
-- `Final-Project/SHADOWLINK-FIELD/`: 130 paths
+The committed tree has 130 matching relative paths under `SHADOWLINK-FIELD/` and `Final-Project/SHADOWLINK-FIELD/`; every corresponding Git object SHA matched at the audited commit.
 
-At the audited commit, every relative path in those two trees has the same Git blob/tree SHA (130 of 130 matched, zero content differences). This is stronger evidence than similar names: they are byte-identical committed copies at this revision.
+The repository's documentation points toward a domain split:
+- `SHADOWLINK-FIELD/docs/MACOS_SETUP.md` labels the root `SHADOWLINK-FIELD/` as the production communications platform.
+- The same setup guide labels `Final-Project/` as original research provenance and read-only.
+- `.planning/PROJECT.md` also calls `Final-Project` the active verified codebase, while `AGENTS.md` assigns the field backend to root `SHADOWLINK-FIELD/backend/` and assigns LPI/DSP work to `Final-Project/`.
 
-**Risk:** agents and operators may edit or run one copy while reading documentation from the other. Tests and setup steps may be executed against the wrong root. This also duplicates source and increases repository footprint.
+**Provisional ownership decision for this phase:** `Final-Project/` owns the LPI research and its existing research/messaging stack; root `SHADOWLINK-FIELD/` is the intended operational field application; `Final-Project/SHADOWLINK-FIELD/` is an identical nested mirror, not a third unique implementation.
 
-**Recommendation:** do not delete either copy in this phase. First inspect local execution scripts, import paths, documentation links, and deployment assumptions. Then designate one canonical location and remove or explicitly generate the other copy in a separate reviewed change. Do not silently sync two copies indefinitely.
+**Risk:** deployment commands, imports and the concurrent agents may still reference the nested mirror. Identical contents do not prove identical runtime behavior because Python import paths and relative paths differ by parent directory.
+
+**Recommendation:** keep all copies intact during baseline collection. The new baseline script compares content manifests and lists the tests/frontends available at each root. Before removing or freezing the nested copy, inspect every launcher, import, docs link and local uncommitted change. Handle any removal as a separate reviewed change.
 
 ### F2 — GSD state is internally inconsistent and behind the latest code
 
@@ -38,6 +41,7 @@ At the audited commit, every relative path in those two trees has the same Git b
 - The latest `main` commit is dated 2026-10-21 and contains an SDR receive-path repair plus new tests.
 - The preceding Motorola LPI commit reports a 384-test full suite, as well as narrower subsystem test totals.
 - `.planning/ROADMAP.md` still labels v2.0 as “in planning” even though its phase checklist and `.planning/STATE.md` mark the phases complete.
+- `.planning/state.json` is even further behind: it marks phase 7 in progress and phases 8–9 pending, while `.planning/STATE.md` says all nine phases are complete.
 - Several `.planning/codebase/` reports have analysis dates 2026-10-16 through 2026-10-19 and describe earlier hardware and integration boundaries.
 
 **Risk:** GSD may plan against old status, test counts, names, paths, or assumptions, and later agents may accept outdated reports as current evidence.
@@ -68,13 +72,15 @@ The v4 LPI payload layer documents AES-128-CTR, RS(42,34), and CRC-8; the applic
 
 **Recommendation:** trace a single message from application encryption through fragmentation, adapter framing, receive/reassembly, tag validation and final delivery. Use known-answer tests and adversarial negative tests for the cryptographic code; independently review the custom ML-KEM implementation before relying on it for production security. Do not expose plaintext before AEAD verification succeeds.
 
-### F6 — CI exists for the nested LPI research project, but not as a whole-repository gate
+### F6 — The checked-in LPI workflow is not at GitHub Actions' required repository-root location
 
-The audited tree contains `Final-Project/.github/workflows/ci.yml`, which runs LPI v4 loopback/framing tests and a short training-and-metric gate. No root-level `.github/workflows/` is present, and the inspected workflow is scoped to the LPI research paths; it does not demonstrate that the full `Final-Project` messaging/Motorola suites or the separate root `SHADOWLINK-FIELD/` app are tested on every pull request.
+The only workflow YAML found is `Final-Project/.github/workflows/ci.yml`. GitHub Actions discovers workflows from the repository-root `.github/workflows/` directory, not a nested subproject's `.github/workflows/` directory. See [GitHub's workflow syntax documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax). The nested file also uses paths such as `lpi_v4/**` and a `working-directory: lpi_v4`, which assume `Final-Project/` is the repository root.
 
-**Risk:** a regression in messaging, Motorola integration, the second application stack, or frontend builds may not be caught by the existing LPI-focused CI.
+The repository Actions API returned `total_count: 0` workflow runs at the time of this audit. That means the prior test totals are historical/project-reported values, not a verified current GitHub Actions baseline.
 
-**Recommendation:** first inspect the current workflow triggers and run it against the actual nested layout; then add or extend separate CI jobs for the relevant application roots and frontend builds. Keep hardware-only tests marked and skipped by explicit capability checks; never let absence of hardware create fabricated success.
+**Risk:** the project may have no automatically executing CI despite having a workflow YAML file committed inside `Final-Project/`.
+
+**Recommendation:** collect a local baseline in the actual stable checkout first. Then add a deliberately designed repository-root workflow in a separate reviewed change, with jobs scoped to the research app and the root field app, explicit dependency setup, frontend builds, and hardware-only tests marked unavailable rather than passed when hardware is absent.
 
 ### F7 — Older repository concerns need revalidation, not blind application
 
@@ -92,7 +98,7 @@ The 2026-10-19 `.planning/codebase/CONCERNS.md` flags default secret fallbacks, 
 | SDR | USRP I/O and a software-testable Motorola SDR backend are present; latest commit reports 3/3 software loopback messages | Any over-the-air range, sensitivity, BER, or occupancy result |
 | PQC / AEAD | ML-KEM-768 and AES-GCM-related modules/tests are present | Independent FIPS 203 known-answer validation and complete protocol security review |
 | Mesh / visualization | Routing, relay, UI and RF tools are present in source and planning artifacts | Correctness of live routes under physical radio losses and moving real nodes |
-| CI | No GitHub Actions workflow files in the audited tree | Automatic execution of test and build gates on every push/PR |
+| CI | One LPI-focused YAML file exists under `Final-Project/.github/workflows/`, outside the required repository-root location | Actions API showed zero workflow runs; the current pushed test baseline is not verified by CI |
 
 ## Recommended order of work
 
@@ -107,7 +113,7 @@ The 2026-10-19 `.planning/codebase/CONCERNS.md` flags default secret fallbacks, 
 ## Safety and release boundaries
 
 - This audit does not change or merge `main`.
-- No tests were run through this GitHub-only session.
+- No ASTRA project test suite was run through this GitHub-only session. The added baseline runner itself passed syntax compilation and synthetic tree-comparison smoke checks only.
 - No radio was armed or operated.
 - No physical range, BER, FER, latency, or jamming-resilience result is inferred from software simulation.
 - Do not merge this plan or delete duplicate source paths without reviewing it alongside the current local agent's changes.

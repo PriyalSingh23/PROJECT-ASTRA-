@@ -1,151 +1,109 @@
-# ASTRA reintegration plan — proposed GSD milestone
+# ASTRA reintegration plan — first baseline phase and staged follow-up
 
-**Purpose:** turn the remote audit into a small, verified sequence of changes. This document is a plan, not proof that its phases have been implemented.
+**Purpose:** establish a reproducible baseline and explicitly assign source ownership before application code or model weights are changed. This is a proposed GSD plan, not a claim that ASTRA's test suites have already run.
 
 ## Guardrails
 
-1. Use an isolated worktree/branch. The existing agent may have unpushed or uncommitted changes invisible to GitHub.
-2. Preserve the application frameworks and currently working flows; no wholesale rewrite.
-3. Every phase needs acceptance criteria, exact test commands, test results, and a status distinction between source-present, unit-tested, software-loopback-tested, and physically validated.
-4. Never claim radio performance based on a software-only channel. Physical RF tests require approved hardware, interfaces, and operating authorization.
-5. Keep the root `SHADOWLINK-FIELD/` and nested `Final-Project/SHADOWLINK-FIELD/` copies unchanged until canonical ownership and runtime references are confirmed.
-6. Do not merge, reset, force-push, or delete branches as part of the audit phase.
+1. Work in an isolated worktree/branch. Another agent may have local, unpushed changes invisible through GitHub.
+2. Do not reset, stash, overwrite, commit, merge, or delete another agent's work to make the baseline clean.
+3. Keep both SHADOWLINK-FIELD copies intact during Phase 1.
+4. Separate source-present, unit-tested, software-loopback-tested, and hardware-validated status.
+5. Physical RF remains out of scope until exact hardware/interfaces/authorization are verified. No range, BER/FER, latency or interference-resilience claim should be inferred from simulation alone.
 
-## Phase 0 — Baseline, code map and GSD state (first)
+## Provisional source ownership decision
 
-### Work
-- Run `/gsd-help`, `/gsd-progress`, and `/gsd-health` in the actual OpenCode environment.
-- Refresh the codebase map after the other agent reaches a stable checkpoint.
-- Run tests independently for `Final-Project` and `SHADOWLINK-FIELD`; record environment, command, exit code, and exact test summary.
-- Reconcile `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/PROJECT.md`, and older `.planning/codebase/*` report dates.
-- Rename GSD-facing project identity to ASTRA where it is a user-facing product name, without mechanically renaming internal packages, API identifiers, DB tables, environment variables or legacy compatibility fields.
+- `Final-Project/` owns the LPI research and its existing research/messaging stack.
+- `SHADOWLINK-FIELD/` is the intended operational field application according to its macOS setup guide; it contains a separate FastAPI backend, adapter contracts, queue and React frontend.
+- `Final-Project/SHADOWLINK-FIELD/` is a 130-path byte-identical mirror of the root field application at the audited commit. Keep it for now as a compatibility snapshot while path references and local agent state are checked. It should not be edited independently.
+- `.planning/PROJECT.md`, `.planning/STATE.md`, `.planning/state.json`, and `.planning/ROADMAP.md` disagree about the active source of truth and phase status. Reconcile them through the installed GSD workflow after collecting local evidence; do not manually mark tests green.
 
-### Acceptance
-- The current commit SHA and local dirty state are recorded.
-- Both app roots and test commands are explicit.
-- Test counts are reproduced, not copied from commit prose.
-- Every known concern is either confirmed with a current file/line + regression test, or marked stale/not reproduced.
-- No application runtime behavior is changed in this phase.
-
-## Phase 1 — Establish the integration boundary and remove ambiguity
+## Phase 1 — Baseline and repository-root ownership (do this first)
 
 ### Work
-- Inventory entry points, backend services, database ownership, endpoints, adapter interfaces, and frontends in both application trees.
-- Verify the 130-path byte-identical SHADOWLINK-FIELD duplicate and search scripts, CI, docs, imports, and deployment files for references to each location.
-- Decide whether one copy is canonical, the nested copy is a frozen snapshot, or both are intentionally distributed. Do not delete before the decision is reviewed.
-- Define versioned inter-process message/adapter contracts, with capability negotiation and explicit simulation/hardware status.
-- Add contract tests before consolidating implementation.
 
-### Acceptance
-- One architecture diagram has authoritative runtime and deployment boundaries.
-- Every transport has a documented contract and status semantics.
-- Test/launch scripts cannot silently select the wrong copy.
-- Duplication cleanup is a separate PR with traceable reference checks.
+1. Ask the active agent to reach a stable checkpoint. Run the baseline from that checkpoint or an isolated worktree so edits do not change under the test runner.
+2. Run the new read-only inventory and tree-manifest tool:
 
-## Phase 2 — Reproducible quality gates
+   ```bash
+   python scripts/astra_baseline_audit.py --repo-root . --output /tmp/astra-baseline-inventory.json
+   ```
 
-### Work
-- Add Python CI jobs for each supported application root after confirming supported Python versions and native dependencies.
-- Add frontend dependency install, type-check/lint, and production build to CI; add frontend unit tests if needed.
-- Mark hardware-dependent tests explicitly and skip only when a capability probe proves hardware is absent.
-- Preserve software-loopback tests that cover realistic framing/decoder paths without a radio.
-- Attach reports for environment, test command, pass/fail/skip totals, and build status.
+3. After dependencies are already installed, run the tests and frontend builds explicitly:
 
-### Acceptance
-- Every pull request automatically checks the changed application.
-- CI doesn't require secrets, radio devices, or live RF.
-- Missing hardware is reported as “not run / unavailable,” never success.
-- Test totals in the GSD state can be regenerated from CI.
+   ```bash
+   python scripts/astra_baseline_audit.py --repo-root . --run-tests --run-builds --output /tmp/astra-baseline-full.json
+   ```
 
-## Phase 3 — End-to-end message security and fragmentation
+   The script does not install dependencies. It runs pytest separately in `Final-Project/`, `SHADOWLINK-FIELD/`, and `Final-Project/SHADOWLINK-FIELD/`, and runs `npm run build` in each present frontend. It records commit/branch/dirty state, Python/Node/npm versions, test-file inventory, per-command return code, duration and output tail. A failure due to missing dependencies is recorded as a failure, not skipped or passed.
 
-### Work
-- Trace payload protection across the message API, envelope, fragmenter, adapter, receive side, and final inbox.
-- Define one clear security boundary: authenticated application message payload plus immutable AAD for IDs, endpoint identities, sequence, expiry and protocol version.
-- Verify AES-GCM nonce uniqueness, tag verification before plaintext exposure, replay rejection, key rotation, key IDs, downgrade behavior, and error handling.
-- Validate ML-KEM-768 against official FIPS 203 known-answer test vectors and independently review its implementation; keep hybrid key schedule and failure/negotiation semantics explicit.
-- Review the experimental LPI crypto layer separately: CRC-8 is not a MAC. Ensure application AEAD remains end-to-end even when an adapter uses its own FEC/CRC/framing.
-- Implement or test fragmentation/reassembly limits, missing fragment recovery, duplicate suppression, expiry, and larger application messages.
+4. Confirm the actual developer environment used by the active agent and record its uncommitted changes separately. The pushed GitHub commit is not a substitute for local workspace state.
+5. Confirm these two facts independently: (a) the source trees match by path/content hash; (b) deployment and import references indicate which root is intended for each application.
+6. Record the existing nested LPI workflow issue: `Final-Project/.github/workflows/ci.yml` is not in repository-root `.github/workflows/`, so GitHub Actions does not discover it as a repository workflow. The current GitHub Actions API showed zero workflow runs. Treat earlier test counts as historical claims until rerun.
+7. After evidence is collected, update GSD state, roadmap and codebase maps so they all report the same verified status.
 
-### Acceptance
-- Round-trip tests pass across simulated adapters.
-- Tamper, truncation, replay, invalid tag, wrong key, invalid header, bad KEM vectors and downgrade tests fail closed.
-- No plaintext is released before AEAD verification.
-- Key material and payload plaintext are absent from logs.
-- Any fallback path is explicit, authenticated as appropriate, and visible to the operator.
+### Acceptance criteria
 
-## Phase 4 — Reliable offline store-and-forward
+- Baseline JSON records repository root, commit SHA, current branch, dirty state and runtime versions.
+- All three Python test roots and all available frontend builds have explicit pass/fail/blocked results. Tests are not silently omitted when dependencies or toolchains are missing.
+- The duplicate tree comparison reports exact same/different/missing paths and hashes. At the audited commit, all 130 relative entries matched.
+- The operational ownership rule is written down: root field application is canonical for field operations; `Final-Project` is canonical for the LPI research stack; the nested field copy remains frozen pending a path-reference and local-state review.
+- No application runtime behavior changes and no duplicate source files are removed in this phase.
+- GSD state files are reconciled only from evidence that was actually collected.
+
+## Phase 2 — Migrate or remove the nested mirror (separate reviewed change)
 
 ### Work
-- Test process crash/restart before send, during send, after receiver persistence, and before ACK arrival.
-- Test duplicate message submissions, duplicate frames, lost ACK, stale leases, expired messages, reconnect synchronization, disk-full conditions and competing workers.
-- Verify the message state machine distinguishes queued, transmitted, received, authenticated, acknowledged, expired and failed.
-- Exercise larger multi-frame transfers and selective retransmission.
-- Measure delivery completion and queue delay under deterministic injected link loss and interruption.
+- Search all launch scripts, Python imports, frontend commands, tests, docs, workflows and relative paths for both field roots.
+- Determine whether the nested directory is still required by packaging, import resolution or a compatibility consumer.
+- If there are no consumers, prepare a separate PR that removes the nested mirror and updates references. If consumers exist, replace the copy with one explicit packaging/reference mechanism rather than ongoing duplicate maintenance.
 
 ### Acceptance
-- No accepted message is silently lost during tested recoverable failures.
-- Retries do not create duplicate inbox deliveries.
-- `DELIVERED` requires the configured, verifiable recipient receipt.
-- Payload size limits, expiry behavior and queue-full behavior are documented and tested.
+- No deployment/test/documentation reference breaks.
+- The canonical root field application passes its full tests and frontend build.
+- The research stack still runs its relevant tests after any path changes.
+- Deletion is reviewed separately and never occurs as an incidental audit cleanup.
 
-## Phase 5 — PHY benchmark and measured improvement
+## Phase 3 — Add functioning repository-root CI
 
-### Work
-- Run the conventional PHY baseline and CGAN path under identical documented payload/channel test assumptions.
-- Separate AWGN, multipath, CFO/clock drift, phase noise, timing error, IQ imbalance/DC offset, and burst corruption in controlled simulation. Then combine them.
-- Measure BER before/after FEC, FER, payload goodput, P50/P95/P99 latency, synchronization success, residual CFO, PAPR/occupied bandwidth as relevant, and confidence bounds/sample sizes.
-- Compare RS and candidate codes such as LDPC only where frame sizes, latency, complexity and target platform make comparison meaningful.
-- Inspect the decoder/CNN task, dataset splitting, and held-out generalization before deciding whether more training will improve the link.
-- Preserve model manifest/hash, training configuration, dataset provenance, checkpoint and evaluation JSON for each accepted checkpoint.
+- Add a root `.github/workflows/` workflow that tests both maintained applications and builds their frontends.
+- Pin supported Python and Node versions after the baseline run; install dependencies from explicit manifests.
+- Mark physical-hardware checks as unavailable unless a validated device is present. Do not conflate software loopback with radio acceptance.
+- Retain the existing LPI evaluation gate, but relocate/adapt it so all working directories and path filters match the monorepo layout.
 
-### Acceptance
-- Benchmark is deterministic enough to compare changes and records its configuration.
-- Held-out tests are split by independent source/session where appropriate.
-- A model change is accepted only if it improves pre-agreed metrics without unacceptable regression in other metrics.
-- All reported scores include test conditions and sample sizes.
-- No “undetectable”, “jam-proof”, or physical range claims are inferred from the model's training metrics.
+## Phase 4 — Offline message reliability
 
-## Phase 6 — Motorola, voice and SDR hardware acceptance
+- Test interruption at every delivery stage, worker/app restart, lost ACK, duplicate submission, stale lease recovery, expiry, disk-full behavior, reconnect sync and fragmentation.
+- Preserve idempotency and durable receipt semantics; `DELIVERED` requires the intended verified recipient receipt.
 
-### Work
-- Confirm exact Motorola product family/model, firmware, accessory/audio interface, digital-service license and supported data transport.
-- Test audio/PTT and receive capture separately from message dispatch.
-- Test SDR software loopback, device discovery timeout, explicit RF arming/lockout, receive decode, and safe failure modes.
-- Check voice latency, jitter, interruptions, prioritization, and audio quality independently from text message retry queues.
-- Keep each adapter's readiness state explicit and fail closed when prerequisites are absent.
+## Phase 5 — End-to-end cryptography and packet framing
 
-### Acceptance
-- Model/profile validation passes with vendor-approved interfaces.
-- A physical test report identifies hardware, firmware, configuration, venue/authorization, test commands, and captured receiver outcomes.
-- Hardware absent or unapproved means physically validated = false.
-- Simulation/software-loopback remains available as a separate test tier.
+- Trace one payload through AEAD, AAD/header binding, key ID/rotation, fragmentation, adapter framing, receive reassembly and final inbox.
+- Test invalid tags, wrong keys, tamper, replay, truncation, downgrade and malformed frames; no plaintext may be released before AEAD authentication succeeds.
+- Validate custom ML-KEM code with official FIPS 203 known-answer tests and an independent security review before production use.
+- Keep link-layer CRC/FEC distinct from cryptographic authenticity.
 
-## Phase 7 — Route recovery, observability and field packaging
+## Phase 6 — PHY benchmark before further CGAN/CNN training
 
-### Work
-- Inject relay outages, delayed acknowledgements, stale topology, loops, TTL expiry, and duplicate bundle delivery.
-- Validate route-choice inputs and recovery time using measured link state; label simulated geometry separately from real telemetry.
-- Ensure waterfall, PCAP, link-budget and diagnostic displays expose units, timestamps, source and simulation/hardware provenance.
-- Profile CPU/memory/latency for edge deployment and define service start/stop, storage and recovery procedures.
-- Perform security/configuration review of secrets, device permissions, logs, exports and backup/restore.
+- Reproduce a conventional modulation baseline and CGAN results with documented dataset split, model hash, seed/configuration, channel conditions and sample sizes.
+- Measure BER before/after FEC, FER, goodput, synchronization success, residual CFO and latency; test AWGN, fading, offsets, phase noise and burst errors separately before combinations.
+- Compare coding choices only with equivalent payloads and channel assumptions. Accept model changes only when held-out results demonstrate improvement.
 
-### Acceptance
-- Routing tests prove message delivery/recovery or an honest failure result.
-- Operator UI never displays stale simulation data as live RF.
-- Field-start/stop and recovery are documented and tested on supported target platforms.
-- Release report lists passed, failed, skipped and unvalidated hardware cases.
+## Phase 7 — Motorola, voice and approved SDR hardware acceptance
 
-## GSD execution sequence
+- Verify exact radio model/firmware and approved audio/PTT/data interfaces. Test audio, control, receive capture and data framing separately before end-to-end delivery.
+- Report `simulated`, `software-loopback-verified`, `hardware-ready` and `over-the-air-verified` independently.
+- Physical RF tests require authorized equipment and conditions; don't call simulation or a missing device a physical success.
 
-Use these installed skills in the actual OpenCode worktree, confirming their precise syntax with `/gsd-help`:
+## Phase 8 — Routing, diagnostics and deployment
 
-1. `/gsd-progress` → `/gsd-health` → `/gsd-map-codebase --fast --focus tech+arch` → `/gsd-map-codebase --fast --focus quality`.
-2. `/gsd-ingest-docs` only if important local documents are absent from planning; review current `.planning` artifacts before importing.
-3. `/gsd-capture` and `/gsd-review-backlog` to record and select phases.
-4. `/gsd-spec-phase 0` → `/gsd-discuss-phase 0` → `/gsd-plan-phase 0` → `/gsd-plan-review-convergence 0`.
-5. `/gsd-execute-phase 0 --validate` → `/gsd-verify-work 0` → `/gsd-code-review 0` → `/gsd-validate-phase 0`.
-6. Repeat for one phase at a time. Use `/gsd-secure-phase` for Phase 3 and `/gsd-eval-review` for Phase 5.
-7. Do not use `/gsd-autonomous` on the active shared worktree. Do not delete the duplicate tree or merge the branch without review.
+- Inject relay loss, stale topology, TTL expiry, duplicate bundles and failed ACKs; verify forwarding and honest failure states.
+- Label simulation vs live telemetry in route maps, waterfall, PCAP and link-budget diagnostics.
+- Profile resource use and validate start/stop, recovery, backup/restore and edge-device packaging.
 
-If the installed skill's argument syntax differs, treat `/gsd-help` output as authoritative.
+## GSD sequence in OpenCode
+
+1. In the isolated worktree, run `/gsd-help`, `/gsd-progress`, `/gsd-health`, then `/gsd-map-codebase --fast --focus tech+arch` and `/gsd-map-codebase --fast --focus quality`.
+2. Use `gsd-new-milestone` only after reconciling the existing milestone state. The current planning files conflict, so do not assume a new milestone is already initialized.
+3. Specify/discuss/plan the next available phase, then review the plan before execution. Use the next available phase number as reported by GSD; the previous committed roadmap goes through Phase 9.
+4. Execute only the baseline phase first, with validation; then run `gsd-verify-work`, `gsd-code-review`, and `gsd-validate-phase` before advancing.
+5. Do not run `gsd-autonomous` in the shared working directory while the other agent is active.
