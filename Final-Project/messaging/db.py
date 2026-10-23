@@ -8,6 +8,7 @@ from messaging.security_config import (
     DEMO_TOKEN_ENDPOINT_A,
     DEMO_TOKEN_ENDPOINT_B,
     get_endpoint_token,
+    is_production,
 )
 from messaging.models import Base, Endpoint, SystemSetting, utcnow
 
@@ -158,6 +159,11 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
             )
             session.add(ep_a)
         else:
+            if is_production() and ep_a.auth_token != token_a:
+                raise RuntimeError(
+                    "Stored endpoint-a token does not match SHADOWCOMM_TOKEN_ENDPOINT_A. "
+                    "Perform an explicit credential rotation before production startup."
+                )
             if not ep_a.auth_token:
                 ep_a.auth_token = token_a
             if station_id:
@@ -189,6 +195,11 @@ def _init_db(db_path: str = DEFAULT_DB_PATH, station_id: Optional[str] = None):
             )
             session.add(ep_b)
         else:
+            if is_production() and ep_b.auth_token != token_b:
+                raise RuntimeError(
+                    "Stored endpoint-b token does not match SHADOWCOMM_TOKEN_ENDPOINT_B. "
+                    "Perform an explicit credential rotation before production startup."
+                )
             if not ep_b.auth_token:
                 ep_b.auth_token = token_b
             if station_id:
