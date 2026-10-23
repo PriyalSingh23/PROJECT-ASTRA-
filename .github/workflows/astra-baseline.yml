@@ -5,18 +5,68 @@ on:
     branches:
       - main
     paths:
-      - "Final-Project/**"
-      - "SHADOWLINK-FIELD/**"
       - ".github/workflows/**"
-      - "scripts/astra_baseline_audit.py"
       - "AGENTS.md"
+      - "scripts/astra_baseline_audit.py"
+      - "Final-Project/*.py"
+      - "Final-Project/**/*.py"
+      - "Final-Project/*.grc"
+      - "Final-Project/**/*.grc"
+      - "Final-Project/requirements*.txt"
+      - "Final-Project/pytest.ini"
+      - "Final-Project/.github/workflows/**"
+      - "Final-Project/frontend/src/**"
+      - "Final-Project/frontend/public/**"
+      - "Final-Project/frontend/package.json"
+      - "Final-Project/frontend/package-lock.json"
+      - "Final-Project/frontend/index.html"
+      - "Final-Project/frontend/vite.config.ts"
+      - "Final-Project/frontend/tsconfig*.json"
+      - "SHADOWLINK-FIELD/backend/**"
+      - "SHADOWLINK-FIELD/tests/**"
+      - "SHADOWLINK-FIELD/scripts/**"
+      - "SHADOWLINK-FIELD/requirements*.txt"
+      - "SHADOWLINK-FIELD/pytest.ini"
+      - "SHADOWLINK-FIELD/frontend/src/**"
+      - "SHADOWLINK-FIELD/frontend/public/**"
+      - "SHADOWLINK-FIELD/frontend/package.json"
+      - "SHADOWLINK-FIELD/frontend/package-lock.json"
+      - "SHADOWLINK-FIELD/frontend/index.html"
+      - "SHADOWLINK-FIELD/frontend/vite.config.ts"
+      - "SHADOWLINK-FIELD/frontend/tsconfig*.json"
+      - "Final-Project/SHADOWLINK-FIELD/**"
   pull_request:
     paths:
-      - "Final-Project/**"
-      - "SHADOWLINK-FIELD/**"
       - ".github/workflows/**"
-      - "scripts/astra_baseline_audit.py"
       - "AGENTS.md"
+      - "scripts/astra_baseline_audit.py"
+      - "Final-Project/*.py"
+      - "Final-Project/**/*.py"
+      - "Final-Project/*.grc"
+      - "Final-Project/**/*.grc"
+      - "Final-Project/requirements*.txt"
+      - "Final-Project/pytest.ini"
+      - "Final-Project/.github/workflows/**"
+      - "Final-Project/frontend/src/**"
+      - "Final-Project/frontend/public/**"
+      - "Final-Project/frontend/package.json"
+      - "Final-Project/frontend/package-lock.json"
+      - "Final-Project/frontend/index.html"
+      - "Final-Project/frontend/vite.config.ts"
+      - "Final-Project/frontend/tsconfig*.json"
+      - "SHADOWLINK-FIELD/backend/**"
+      - "SHADOWLINK-FIELD/tests/**"
+      - "SHADOWLINK-FIELD/scripts/**"
+      - "SHADOWLINK-FIELD/requirements*.txt"
+      - "SHADOWLINK-FIELD/pytest.ini"
+      - "SHADOWLINK-FIELD/frontend/src/**"
+      - "SHADOWLINK-FIELD/frontend/public/**"
+      - "SHADOWLINK-FIELD/frontend/package.json"
+      - "SHADOWLINK-FIELD/frontend/package-lock.json"
+      - "SHADOWLINK-FIELD/frontend/index.html"
+      - "SHADOWLINK-FIELD/frontend/vite.config.ts"
+      - "SHADOWLINK-FIELD/frontend/tsconfig*.json"
+      - "Final-Project/SHADOWLINK-FIELD/**"
   workflow_dispatch:
 
 permissions:
@@ -32,13 +82,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Generate baseline inventory
         run: python scripts/astra_baseline_audit.py --repo-root . --output astra-baseline-inventory.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: astra-baseline-inventory
           path: astra-baseline-inventory.json
@@ -49,8 +99,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -72,8 +122,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -91,8 +141,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -117,8 +167,8 @@ jobs:
           - SHADOWLINK-FIELD/frontend
           - Final-Project/SHADOWLINK-FIELD/frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm

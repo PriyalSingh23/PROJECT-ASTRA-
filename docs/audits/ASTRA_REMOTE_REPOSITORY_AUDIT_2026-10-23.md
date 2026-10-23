@@ -157,3 +157,13 @@ The review-branch inventory artifact reports:
 - 130 of 130 relative entries match across the two copies
 
 This narrows the remote cleanup risk: **no static direct application path reference was found outside the nested tree in the pushed source**. It is not proof of safe deletion. The scan does not inspect untracked/local files, runtime-generated paths, dynamic imports, packaging outside scanned text formats, or agent edits that have not been pushed. The local dirty-state and launcher/import check remains a merge prerequisite.
+
+
+### F10 — Dependency manifests and Actions runtime have been made explicit
+
+The baseline workflow no longer installs floating dependency names directly. It now uses:
+- `Final-Project/requirements-ci.txt`: exact versions matching the successful Python 3.12 CPU baseline
+- `SHADOWLINK-FIELD/requirements.txt` and `requirements-dev.txt`: pinned runtime/test dependencies
+- Identical copies of those two field manifests under the nested mirror to keep the mirror comparison honest until a separate cleanup change
+
+The workflow was also upgraded to GitHub's current v7 first-party actions (`checkout`, `setup-python`, `setup-node`, and `upload-artifact`) and its path filters were narrowed toward application code, tests, dependency manifests, front-end build inputs, the audit runner, and workflow files. This avoids rerunning the full research suite for ordinary documentation-only edits. These changes are pending CI verification on the current branch head; do not treat the manifest update itself as validated until that run passes.
