@@ -196,7 +196,7 @@ def run_baseline_commands(root: Path, run_tests: bool, run_builds: bool, timeout
             if not cwd.is_dir():
                 results.append({"label": f"pytest: {rel}", "return_code": 127, "error": "directory missing"})
                 continue
-            item = run_capture([sys.executable, "-m", "pytest", "-q", "tests"], cwd, timeout=timeout)
+            item = run_capture([sys.executable, "-m", "pytest", "-o", "addopts=-ra", "-q", "tests"], cwd, timeout=timeout)
             item["label"] = f"pytest: {rel}"
             results.append(item)
     if run_builds:
