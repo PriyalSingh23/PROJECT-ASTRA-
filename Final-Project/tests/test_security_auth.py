@@ -290,3 +290,16 @@ def test_production_mode_forces_endpoint_authentication(monkeypatch):
 
     monkeypatch.setenv("SHADOWCOMM_REQUIRE_AUTH", "yes")
     assert endpoint_authentication_required() is True
+
+
+def test_production_mode_rejects_shared_endpoint_tokens(monkeypatch):
+    from messaging.security_config import ensure_distinct_endpoint_tokens
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "production")
+    with pytest.raises(RuntimeError, match="must be different in production"):
+        ensure_distinct_endpoint_tokens("A4" * 32, "A4" * 32)
+
+    ensure_distinct_endpoint_tokens("A4" * 32, "B5" * 32)
+
+    monkeypatch.setenv("SHADOWCOMM_ENV", "development")
+    ensure_distinct_endpoint_tokens("demo-token", "demo-token")
